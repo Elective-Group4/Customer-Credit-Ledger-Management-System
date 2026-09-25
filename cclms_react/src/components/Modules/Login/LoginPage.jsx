@@ -1,6 +1,9 @@
 import { GalleryVerticalEnd } from "lucide-react"
+import { useState } from "react"
+import { useNavigate } from "react-router-dom"
 
 import { cn } from "@/lib/utils"
+import { supabase } from "@/lib/supabase"
 import { Button } from "@/components/ui/button"
 import {
   Field,
@@ -12,8 +15,62 @@ import {
 import { Input } from "@/components/ui/input"
 
 function LoginForm({ className, ...props }) {
+  const navigate = useNavigate()
+  const [error, setError] = useState("")
+  const [isLoading, setIsLoading] = useState(false)
+
+  async function handleSubmit(event) {
+  event.preventDefault()
+  setError("")
+  setIsLoading(true)
+
+  const formData = new FormData(event.currentTarget)
+  const email = formData.get("email")
+  const password = formData.get("password")
+
+  // Login
+  const { data, error: loginError } =
+    await supabase.auth.signInWithPassword({
+      email,
+      password,
+    })
+
+  if (loginError) {
+    setError(loginError.message)
+    setIsLoading(false)
+    return
+  }
+
+  // Get the user's profile and role
+  const { data: profile, error: profileError } =
+    await supabase
+      .from("profiles")
+      .select("role, full_name")
+      .eq("id", data.user.id)
+      .single()
+
+  if (profileError) {
+    console.error("Profile error:", profileError)
+
+    setError("Unable to find your account profile.")
+    await supabase.auth.signOut()
+    setIsLoading(false)
+    return
+  }
+
+  // Check admin role
+  if (profile.role === "admin") {
+    navigate("/admin", { replace: true })
+  } else {
+    setError("This account does not have administrator access.")
+    await supabase.auth.signOut()
+  }
+
+  setIsLoading(false)
+}
+
   return (
-    <form className={cn("flex flex-col gap-6", className)} {...props}>
+    <form className={cn("flex flex-col gap-6", className)} onSubmit={handleSubmit} {...props}>
       <FieldGroup>
         <div className="flex flex-col items-center gap-1 text-center">
           <h1 className="text-2xl font-bold">Login to your account</h1>
@@ -23,7 +80,7 @@ function LoginForm({ className, ...props }) {
         </div>
         <Field>
           <FieldLabel htmlFor="email">Email</FieldLabel>
-          <Input id="email" type="email" placeholder="m@example.com" required />
+          <Input id="email" name="email" type="email" placeholder="m@example.com" required />
         </Field>
         <Field>
           <div className="flex items-center">
@@ -35,11 +92,14 @@ function LoginForm({ className, ...props }) {
               Forgot your password?
             </a>
           </div>
-          <Input id="password" type="password" required />
+          <Input id="password" name="password" type="password" required />
         </Field>
         <Field>
-          <Button type="submit">Login</Button>
+          <Button type="submit" disabled={isLoading}>
+            {isLoading ? "Logging in..." : "Login"}
+          </Button>
         </Field>
+        {error && <p className="text-sm text-destructive" role="alert">{error}</p>}
         <FieldSeparator>Or continue with</FieldSeparator>
         <Field>
           <Button variant="outline" type="button">
