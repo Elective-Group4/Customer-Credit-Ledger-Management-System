@@ -1,6 +1,7 @@
 import { GalleryVerticalEnd } from "lucide-react"
 import { useState } from "react"
 import { useNavigate } from "react-router-dom"
+import { toast } from "sonner"
 
 import { cn } from "@/lib/utils"
 import { supabase } from "@/lib/supabase"
@@ -60,6 +61,9 @@ function LoginForm({ className, ...props }) {
 
   // Check admin role
   if (profile.role === "admin") {
+    toast.success("Login successful", {
+      description: "Welcome to the admin dashboard.",
+    })
     navigate("/admin", { replace: true })
   } else {
     setError("This account does not have administrator access.")

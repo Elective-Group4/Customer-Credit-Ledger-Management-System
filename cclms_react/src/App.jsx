@@ -9,6 +9,7 @@ import {
 import LoginPage from "./components/Modules/Login/LoginPage"
 import AdminDashboard from "./components/Modules/Admin/AdminDashboard"
 import { TooltipProvider } from "@/components/ui/tooltip"
+import { Toaster } from "@/components/ui/sonner"
 
 import { supabase } from "./lib/supabase"
 
@@ -75,6 +76,16 @@ export default function App() {
   return (
     <TooltipProvider>
     <BrowserRouter>
+      <Toaster 
+        position="top-right"
+          toastOptions={{
+            style: {
+              background: "#0B1F3A",
+              color: "#FFFFFF",
+              border: "1px solid #163A5F",
+            },
+          }}
+        />
       <Routes>
         <Route
           path="/"

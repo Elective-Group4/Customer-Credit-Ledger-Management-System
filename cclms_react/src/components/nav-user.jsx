@@ -18,12 +18,32 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar"
+import { toast } from "sonner"
+import { supabase } from "@/lib/supabase"
+import { useNavigate } from "react-router-dom"
 import { ChevronsUpDownIcon, SparklesIcon, BadgeCheckIcon, CreditCardIcon, BellIcon, LogOutIcon } from "lucide-react"
 
 export function NavUser({
   user
 }) {
   const { isMobile } = useSidebar()
+  const navigate = useNavigate()
+
+  async function handleLogout() {
+    const { error } = await supabase.auth.signOut()
+
+    if (error) {
+      toast.error("Logout failed", {
+        description: error.message,
+      })
+      return
+    }
+
+    toast.success("Logged out", {
+      description: "You have been signed out of the admin dashboard.",
+    })
+    navigate("/login", { replace: true })
+  }
 
   return (
     <SidebarMenu>
@@ -90,7 +110,7 @@ export function NavUser({
               </DropdownMenuItem>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
-            <DropdownMenuItem>
+            <DropdownMenuItem onClick={handleLogout}>
               <LogOutIcon
               />
               Log out

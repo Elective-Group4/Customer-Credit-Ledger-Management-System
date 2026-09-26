@@ -1,5 +1,6 @@
 "use client"
 
+import { createElement } from "react"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -31,7 +32,7 @@ export function NavProjects({
           <SidebarMenuItem key={item.name}>
             <SidebarMenuButton asChild>
               <a href={item.url}>
-                {item.icon}
+                {item.icon && createElement(item.icon)}
                 <span>{item.name}</span>
               </a>
             </SidebarMenuButton>
