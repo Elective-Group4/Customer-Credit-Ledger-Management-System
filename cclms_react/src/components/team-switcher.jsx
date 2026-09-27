@@ -21,11 +21,11 @@ export function TeamSwitcher({ teams }) {
       <SidebarMenuItem>
         <div className="flex h-16 items-center justify-between px-4">
           <div className="flex items-center gap-3 whitespace-nowrap group-data-[collapsible=icon]:hidden">
-            <span className="text-2xl font-extrabold tracking-tight text-[#6B4226]">
+            <span className="text-2xl font-extrabold tracking-tight text-[#D4A017]">
               Sari-Sari
             </span>
 
-            <span className="rounded-full bg-[#6B4226] px-3 py-1 text-xs font-bold text-white">
+            <span className="rounded-full bg-[#D4A017] px-3 py-1 text-xs font-bold text-white">
               ADMIN
             </span>
           </div>

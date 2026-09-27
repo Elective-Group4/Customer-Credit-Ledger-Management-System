@@ -124,8 +124,10 @@ export function NavUser({
                 setLogoutDialogOpen(true)
               }}
             >
+              <div className="bg-red-500 text-white rounded-lg px-2 py-1 flex items-center gap-2 w-full">
               <LogOutIcon />
               Log out
+              </div>
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
@@ -141,7 +143,7 @@ export function NavUser({
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleLogout}>
+            <AlertDialogAction onClick={handleLogout} className="bg-red-500 text-white hover:bg-red-600">
               Log out
             </AlertDialogAction>
           </AlertDialogFooter>

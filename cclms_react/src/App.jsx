@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react"
+
 import {
   BrowserRouter,
   Navigate,
@@ -6,14 +7,21 @@ import {
   Route,
 } from "react-router-dom"
 
-import LoginPage from "./components/Modules/Login/LoginPage"
-import AdminDashboard from "./components/Modules/Admin/AdminDashboard"
+// Components
 import { TooltipProvider } from "@/components/ui/tooltip"
 import { Toaster } from "@/components/ui/sonner"
 
+// Modules
+import LoginPage from "./components/Modules/Login/LoginPage"
+import AdminDashboard from "./components/Modules/Admin/AdminDashboard"
+import OwnerManagement from "./components/Modules/Admin/OwnerManagement"
+import AdminLayout from "./components/Modules/Admin/AdminLayout"
+import AdminLogs from "./components/Modules/Admin/AdminLogs"
+
 import { supabase } from "./lib/supabase"
 
-function AdminRoute() {
+
+function AdminRoute({ children }) {
   const [status, setStatus] = useState("checking")
 
   useEffect(() => {
@@ -24,10 +32,10 @@ function AdminRoute() {
         data: { session },
       } = await supabase.auth.getSession()
 
+      if (!mounted) return
+
       if (!session?.user) {
-        if (mounted) {
-          setStatus("denied")
-        }
+        setStatus("denied")
         return
       }
 
@@ -37,29 +45,30 @@ function AdminRoute() {
         .eq("id", session.user.id)
         .single()
 
-      console.log("AdminRoute profile:", profile)
-      console.log("AdminRoute error:", error)
+      console.log("Current session:", session.user.email)
+      console.log("Profile:", profile)
+      console.log("Profile error:", error)
 
-      if (mounted) {
-        setStatus(
-          profile?.role === "admin"
-            ? "allowed"
-            : "denied"
-        )
+      if (!mounted) return
+
+      if (error) {
+        console.error("Failed to check admin role:", error)
+        setStatus("denied")
+        return
+      }
+
+      if (profile?.role === "admin") {
+        setStatus("allowed")
+      } else {
+        console.log("User role is:", profile?.role)
+        setStatus("denied")
       }
     }
 
     checkAdminAccess()
 
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange(() => {
-      checkAdminAccess()
-    })
-
     return () => {
       mounted = false
-      subscription.unsubscribe()
     }
   }, [])
 
@@ -67,17 +76,22 @@ function AdminRoute() {
     return null
   }
 
-  return status === "allowed"
-    ? <AdminDashboard />
-    : <Navigate to="/login" replace />
+  if (status === "denied") {
+    return <Navigate to="/login" replace />
+  }
+
+  return children
 }
+
 
 export default function App() {
   return (
     <TooltipProvider>
-    <BrowserRouter>
-      <Toaster 
-        position="top-right"
+
+      <BrowserRouter>
+
+        <Toaster
+          position="top-right"
           toastOptions={{
             style: {
               background: "#0B1F3A",
@@ -86,28 +100,78 @@ export default function App() {
             },
           }}
         />
-      <Routes>
-        <Route
-          path="/"
-          element={<Navigate to="/login" replace />}
-        />
 
-        <Route
-          path="/login"
-          element={<LoginPage />}
-        />
+        <Routes>
 
-        <Route
-          path="/admin"
-          element={<AdminDashboard />}
-        />
+          {/* ================================
+              DEFAULT
+          ================================= */}
 
-        <Route
-          path="*"
-          element={<Navigate to="/login" replace />}
-        />
-      </Routes>
-    </BrowserRouter>
+          <Route
+            path="/"
+            element={
+              <Navigate
+                to="/login"
+                replace
+              />
+            }
+          />
+
+
+          {/* ================================
+              LOGIN
+          ================================= */}
+
+          <Route
+            path="/login"
+            element={
+              <LoginPage />
+            }
+          />
+
+          <Route
+            path="/admin"
+            element={
+              <AdminRoute>
+                <AdminLayout />
+              </AdminRoute>
+            }
+          >
+            <Route
+              index
+              element={<AdminDashboard />}
+            />
+
+            <Route
+              path="owners"
+              element={<OwnerManagement />}
+            />
+            <Route
+              path="logs"
+              element={<AdminLogs />}
+            />
+          </Route>
+            
+
+
+          {/* ================================
+              UNKNOWN ROUTE
+          ================================= */}
+
+          <Route
+            path="*"
+            element={
+              <Navigate
+                to="/login"
+                replace
+              />
+            }
+          />
+
+        </Routes>
+
+      </BrowserRouter>
+
     </TooltipProvider>
   )
 }
