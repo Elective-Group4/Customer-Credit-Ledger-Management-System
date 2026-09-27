@@ -30,7 +30,6 @@ function LoginForm({ className, ...props }) {
   const formData = new FormData(event.currentTarget)
   const email = formData.get("email")
   const password = formData.get("password")
-  
 
   // Login
   const { data, error: loginError } =
