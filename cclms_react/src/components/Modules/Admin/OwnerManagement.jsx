@@ -1,6 +1,7 @@
 import * as React from "react"
 import { useEffect, useState } from "react"
 import { supabase } from "@/lib/supabase"
+import { getClientIp } from "@/lib/client-ip"
 
 import {
   Plus,
@@ -251,100 +252,123 @@ export default function OwnerManagement() {
   // =====================================================
 
   const createOwner = async () => {
+  if (!form.full_name.trim()) {
+    toast.error("Store owner name is required")
+    return
+  }
 
-    if (!form.full_name.trim()) {
-      toast.error("Store owner name is required")
-      return
+  if (!form.email.trim()) {
+    toast.error("Email is required")
+    return
+  }
+
+  if (!form.password) {
+    toast.error("Password is required")
+    return
+  }
+
+  if (form.password.length < 6) {
+    toast.error("Password must be at least 6 characters")
+    return
+  }
+
+  if (!form.phone_number.trim()) {
+    toast.error("Phone number is required")
+    return
+  }
+
+  if (!form.store_name.trim()) {
+    toast.error("Store name is required")
+    return
+  }
+
+  if (!form.branch.trim()) {
+    toast.error("Branch is required")
+    return
+  }
+
+  try {
+    setSaving(true)
+
+    const {
+      data: { session },
+      error: sessionError,
+    } = await supabase.auth.getSession()
+
+    console.log("Current session:", session)
+    console.log(
+      "Has access token:",
+      !!session?.access_token
+    )
+
+    if (sessionError) {
+      throw sessionError
     }
 
-    if (!form.email.trim()) {
-      toast.error("Email is required")
-      return
-    }
-
-    if (!form.password) {
-      toast.error("Password is required")
-      return
-    }
-
-    if (form.password.length < 6) {
-      toast.error("Password must be at least 6 characters")
-      return
-    }
-
-    if (!form.phone_number.trim()) {
-      toast.error("Phone number is required")
-      return
-    }
-
-    if (!form.store_name.trim()) {
-      toast.error("Store name is required")
-      return
-    }
-
-    if (!form.branch.trim()) {
-      toast.error("Branch is required")
-      return
-    }
-
-    try {
-
-      setSaving(true)
-
-      const { data, error } =
-        await supabase.functions.invoke(
-          "create-store-owner",
-          {
-            body: {
-              full_name: form.full_name.trim(),
-              email: form.email.trim(),
-              password: form.password,
-              phone_number: form.phone_number.trim(),
-              store_name: form.store_name.trim(),
-              branch: form.branch.trim(),
-              status: form.status,
-            },
-          }
-        )
-
-      if (error) {
-        throw error
-      }
-
-      if (!data?.success) {
-        throw new Error(
-          data?.message ||
-          "Failed to create store owner"
-        )
-      }
-
-      toast.success(
-        "Store owner created successfully"
+    if (!session) {
+      throw new Error(
+        "No active admin session. Please log in again."
       )
+    }
 
-      setDialogOpen(false)
+    const ipAddress = await getClientIp()
 
-      resetForm()
-
-      await fetchOwners()
-
-    } catch (error) {
-
-      console.error(error)
-
-      toast.error(
-        "Failed to create store owner",
+    const { data, error } =
+      await supabase.functions.invoke(
+        "smart-action",
         {
-          description: error.message,
+          body: {
+            full_name: form.full_name.trim(),
+            email: form.email.trim(),
+            password: form.password,
+            phone_number: form.phone_number.trim(),
+            store_name: form.store_name.trim(),
+            branch: form.branch.trim(),
+            status: form.status,
+            ip_address: ipAddress,
+          },
         }
       )
 
-    } finally {
+    console.log("Function data:", data)
+    console.log("Function error:", error)
 
-      setSaving(false)
-
+    if (error) {
+      throw error
     }
+
+    if (!data?.success) {
+      throw new Error(
+        data?.message ||
+        "Failed to create store owner"
+      )
+    }
+
+    toast.success(
+      "Store owner created successfully"
+    )
+
+    setDialogOpen(false)
+    resetForm()
+
+    await fetchOwners()
+  } catch (error) {
+    console.error(
+      "Create owner error:",
+      error
+    )
+
+    toast.error(
+      "Failed to create store owner",
+      {
+        description: error.message,
+      }
+    )
+  } finally {
+    setSaving(false)
   }
+}
+  
 
 
   // =====================================================
@@ -362,6 +386,11 @@ export default function OwnerManagement() {
       return
     }
 
+    if (!form.email.trim()) {
+      toast.error("Email is required")
+      return
+    }
+
     if (!form.phone_number.trim()) {
       toast.error("Phone number is required")
       return
@@ -381,39 +410,29 @@ export default function OwnerManagement() {
 
       setSaving(true)
 
-      const { data, error } =
-        await supabase.functions.invoke(
-          "update-store-owner",
-          {
-            body: {
-              profile_id: editingOwner.profile_id,
-              store_owner_id: editingOwner.id,
-
-              full_name: form.full_name.trim(),
-
-              phone_number:
-                form.phone_number.trim(),
-
-              store_name:
-                form.store_name.trim(),
-
-              branch:
-                form.branch.trim(),
-
-              status: form.status,
-            },
-          }
-        )
+      const { data, error } = await supabase.functions.invoke(
+        "smart-action",
+        {
+          body: {
+            action: "update_owner",
+            profile_id: editingOwner.profile_id,
+            store_owner_id: editingOwner.id,
+            full_name: form.full_name.trim(),
+            email: form.email.trim(),
+            phone_number: form.phone_number.trim(),
+            store_name: form.store_name.trim(),
+            branch: form.branch.trim(),
+            status: form.status,
+          },
+        }
+      )
 
       if (error) {
         throw error
       }
 
       if (!data?.success) {
-        throw new Error(
-          data?.message ||
-          "Failed to update store owner"
-        )
+        throw new Error(data?.message || "Failed to update store owner")
       }
 
       toast.success(
@@ -430,12 +449,20 @@ export default function OwnerManagement() {
 
     } catch (error) {
 
-      console.error(error)
+      console.error("EDIT OWNER ERROR:", {
+        code: error?.code,
+        message: error?.message,
+        details: error?.details,
+        hint: error?.hint,
+        error,
+      })
 
       toast.error(
         "Failed to update store owner",
         {
-          description: error.message,
+          description:
+            error?.message ||
+            "The owner could not be updated.",
         }
       )
 
@@ -474,26 +501,23 @@ export default function OwnerManagement() {
 
       setSaving(true)
 
-      const { data, error } =
-        await supabase.functions.invoke(
-          "delete-store-owner",
-          {
-            body: {
-              profile_id:
-                ownerToDelete.profile_id,
-            },
-          }
-        )
+      const { data, error } = await supabase.functions.invoke(
+        "smart-action",
+        {
+          body: {
+            action: "delete_owner",
+            profile_id: ownerToDelete.profile_id,
+            store_owner_id: ownerToDelete.id,
+          },
+        }
+      )
 
       if (error) {
         throw error
       }
 
       if (!data?.success) {
-        throw new Error(
-          data?.message ||
-          "Failed to delete store owner"
-        )
+        throw new Error(data?.message || "Failed to delete store owner")
       }
 
       toast.success(
@@ -508,12 +532,20 @@ export default function OwnerManagement() {
 
     } catch (error) {
 
-      console.error(error)
+      console.error("DELETE OWNER ERROR:", {
+        code: error?.code,
+        message: error?.message,
+        details: error?.details,
+        hint: error?.hint,
+        error,
+      })
 
       toast.error(
         "Failed to delete store owner",
         {
-          description: error.message,
+          description:
+            error?.message ||
+            "The owner could not be deleted.",
         }
       )
 
@@ -606,6 +638,7 @@ export default function OwnerManagement() {
 
         <Button
           onClick={openAddDialog}
+          className = "bg-[#D4A017] text-white hover:bg-[#D4A017]/90 h-10 px-4 text-base"
         >
 
           <Plus className="mr-2 h-4 w-4" />
@@ -1019,7 +1052,7 @@ export default function OwnerManagement() {
               {editingOwner && (
 
                 <p className="text-xs text-muted-foreground">
-                  Email cannot be changed from this form.
+                  Auth email changes require a server-side admin operation and are not available from the browser form.
                 </p>
 
               )}

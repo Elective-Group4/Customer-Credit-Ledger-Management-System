@@ -31,6 +31,7 @@ import {
 } from "@/components/ui/sidebar"
 import { toast } from "sonner"
 import { supabase } from "@/lib/supabase"
+import { getClientIp } from "@/lib/client-ip"
 import { useNavigate } from "react-router-dom"
 import { useTheme } from "next-themes"
 import {
@@ -57,6 +58,41 @@ export function NavUser({
   }
 
   async function handleLogout() {
+  // Get current user BEFORE signing out
+    const {
+      data: { user }, 
+      error: userError,
+    } = await supabase.auth.getUser()
+
+    if (userError) {
+      console.error("Get user error:", userError)
+    }
+
+    console.log("Logout user:", user)
+
+    if (user) {
+      const ipAddress = await getClientIp()
+      const { data: logData, error: logError } = await supabase
+        .from("admin_logs")
+        .insert({
+          admin_id: user.id,
+          action: "LOGOUT",
+          ip_address: ipAddress,
+        })
+        .select()
+
+      console.log("Logout log data:", logData)
+      console.log("Logout log error:", logError)
+
+      if (logError) {
+        toast.error("Logout log failed", {
+          description: logError.message,
+        })
+        return
+      }
+    }
+
+    // Only sign out after the log was successfully created
     const { error } = await supabase.auth.signOut()
 
     if (error) {
@@ -69,6 +105,7 @@ export function NavUser({
     toast.success("Logged out", {
       description: "You have been signed out of the admin dashboard.",
     })
+
     navigate("/login", { replace: true })
   }
 

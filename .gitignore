@@ -1,0 +1,40 @@
+# Dependencies
+node_modules/
+cclms_react/node_modules/
+
+# Build outputs
+/dist/
+cclms_react/dist/
+.vite/
+cclms_react/.vite/
+
+# Environment files
+.env
+.env.*
+*.local
+cclms_react/.env
+cclms_react/.env.*
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Supabase local state
+.supabase/
+supabase/.temp/
+
+# Deno / local tool caches
+supabase/functions/.deno/
+
+# Editor settings
+.vscode/
+.idea/
+*.swp
+*.swo

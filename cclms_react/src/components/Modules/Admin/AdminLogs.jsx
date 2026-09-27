@@ -18,11 +18,15 @@ import {
 } from "@/components/ui/table"
 
 import { Input } from "@/components/ui/input"
+import { Button } from "@/components/ui/button"
+
+const LOGS_PER_PAGE = 10
 
 export default function AdminLogs() {
   const [logs, setLogs] = useState([])
   const [search, setSearch] = useState("")
   const [loading, setLoading] = useState(true)
+  const [currentPage, setCurrentPage] = useState(1)
 
   async function fetchLogs() {
     setLoading(true)
@@ -72,6 +76,17 @@ export default function AdminLogs() {
     )
   })
 
+  const totalPages = Math.max(1, Math.ceil(filteredLogs.length / LOGS_PER_PAGE))
+  const paginatedLogs = filteredLogs.slice(
+    (currentPage - 1) * LOGS_PER_PAGE,
+    currentPage * LOGS_PER_PAGE
+  )
+
+  function handleSearchChange(event) {
+    setSearch(event.target.value)
+    setCurrentPage(1)
+  }
+
   function formatDate(date) {
     return new Date(date).toLocaleString()
   }
@@ -98,7 +113,7 @@ export default function AdminLogs() {
           <Input
             placeholder="Search logs..."
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={handleSearchChange}
             className="max-w-sm"
           />
         </CardHeader>
@@ -141,7 +156,7 @@ export default function AdminLogs() {
 
                 <TableBody>
 
-                  {filteredLogs.length === 0 ? (
+                  {paginatedLogs.length === 0 ? (
 
                     <TableRow>
                       <TableCell
@@ -154,7 +169,7 @@ export default function AdminLogs() {
 
                   ) : (
 
-                    filteredLogs.map((log) => (
+                    paginatedLogs.map((log) => (
 
                       <TableRow key={log.id}>
 
@@ -195,6 +210,33 @@ export default function AdminLogs() {
                 </TableBody>
 
               </Table>
+
+              {filteredLogs.length > 0 && (
+                <div className="flex flex-col gap-3 border-t p-4 text-sm text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
+                  <span>
+                    Page {currentPage} of {totalPages} ({filteredLogs.length} logs)
+                  </span>
+
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setCurrentPage((page) => page - 1)}
+                      disabled={currentPage === 1}
+                    >
+                      Previous
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setCurrentPage((page) => page + 1)}
+                      disabled={currentPage === totalPages}
+                    >
+                      Next
+                    </Button>
+                  </div>
+                </div>
+              )}
 
             </div>
           )}

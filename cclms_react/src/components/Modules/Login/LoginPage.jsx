@@ -6,6 +6,7 @@ import Logo from "@/assets/images/logo_sarisari.png"
 
 import { cn } from "@/lib/utils"
 import { supabase } from "@/lib/supabase"
+import { getClientIp } from "@/lib/client-ip"
 import { Button } from "@/components/ui/button"
 import {
   Field,
@@ -54,21 +55,41 @@ function LoginForm({ className, ...props }) {
 
   if (profileError) {
     console.error("Profile error:", profileError)
-
     setError("Unable to find your account profile.")
+
     await supabase.auth.signOut()
+
     setIsLoading(false)
     return
   }
 
   // Check admin role
   if (profile.role === "admin") {
+
+    // Create LOGIN log
+    const ipAddress = await getClientIp()
+    const { error: logError } = await supabase
+      .from("admin_logs")
+      .insert({
+        admin_id: data.user.id,
+        action: "LOGIN",
+        ip_address: ipAddress,
+      })
+
+    if (logError) {
+      console.error("Login log error:", logError)
+    }
+
     toast.success("Login successful", {
       description: "Welcome to the admin dashboard.",
     })
+
     navigate("/admin", { replace: true })
+
   } else {
+
     setError("This account does not have administrator access.")
+
     await supabase.auth.signOut()
   }
 
