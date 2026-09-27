@@ -1,3 +1,4 @@
+import { useState } from "react"
 import {
   Avatar,
   AvatarFallback,
@@ -13,6 +14,16 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
+import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
@@ -21,13 +32,29 @@ import {
 import { toast } from "sonner"
 import { supabase } from "@/lib/supabase"
 import { useNavigate } from "react-router-dom"
-import { ChevronsUpDownIcon, SparklesIcon, BadgeCheckIcon, CreditCardIcon, BellIcon, LogOutIcon } from "lucide-react"
+import { useTheme } from "next-themes"
+import {
+  ChevronsUpDownIcon,
+  LogOutIcon,
+  SunIcon,
+  MoonIcon,
+} from "lucide-react"
 
 export function NavUser({
   user
 }) {
   const { isMobile } = useSidebar()
   const navigate = useNavigate()
+  const { theme, setTheme } = useTheme()
+  const [logoutDialogOpen, setLogoutDialogOpen] = useState(false)
+
+  const isDark = theme === "dark"
+
+  function toggleTheme(e) {
+    // Prevent the dropdown from closing when toggling
+    e.preventDefault()
+    setTheme(isDark ? "light" : "dark")
+  }
 
   async function handleLogout() {
     const { error } = await supabase.auth.signOut()
@@ -85,39 +112,41 @@ export function NavUser({
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
-              <DropdownMenuItem>
-                <SparklesIcon
-                />
-                Upgrade to Pro
+              <DropdownMenuItem onSelect={toggleTheme}>
+                {isDark ? <SunIcon /> : <MoonIcon />}
+                {isDark ? "Light mode" : "Dark mode"}
               </DropdownMenuItem>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
-            <DropdownMenuGroup>
-              <DropdownMenuItem>
-                <BadgeCheckIcon
-                />
-                Account
-              </DropdownMenuItem>
-              <DropdownMenuItem>
-                <CreditCardIcon
-                />
-                Billing
-              </DropdownMenuItem>
-              <DropdownMenuItem>
-                <BellIcon
-                />
-                Notifications
-              </DropdownMenuItem>
-            </DropdownMenuGroup>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={handleLogout}>
-              <LogOutIcon
-              />
+            <DropdownMenuItem
+              onSelect={(e) => {
+                e.preventDefault()
+                setLogoutDialogOpen(true)
+              }}
+            >
+              <LogOutIcon />
               Log out
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </SidebarMenuItem>
+
+      <AlertDialog open={logoutDialogOpen} onOpenChange={setLogoutDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Log out?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Would you like to log out of the admin dashboard? You'll need to sign in again to continue.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleLogout}>
+              Log out
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </SidebarMenu>
   )
 }

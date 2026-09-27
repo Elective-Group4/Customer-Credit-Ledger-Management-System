@@ -17,16 +17,8 @@ import {
 import {
   GalleryVerticalEndIcon,
   LayoutDashboardIcon,
-  StoreIcon,
-  PackageIcon,
-  ClipboardListIcon,
-  Settings2Icon,
   UserRoundGroup,
-  PersonStanding,
-  PhilippinePeso,
-  CreditCard,
-  MessageSquareWarning,
-  Columns3Cog,
+  Calendar,
 } from "lucide-react"
 
 const data = {
@@ -51,47 +43,26 @@ const data = {
       icon: LayoutDashboardIcon,
     },
     {
-      title: "Products",
-      url: "/admin/products",
-      icon: PackageIcon,
-    },
-    {
-      title: "Staff",
-      url: "/admin/staff",
+      title: "Owner Management",
+      url: "/admin/owner",
       icon: UserRoundGroup,
     },
     {
-      title: "Customers",
-      url: "/admin/customers",
-      icon: PersonStanding,
-    },
-    {
-      title: "Transactions/Ledger",
-      url: "/admin/transactions",
-      icon: PhilippinePeso,
-    },
-    {
-      title: "Payments",
-      url: "/admin/payments",
-      icon: CreditCard,
-    },
-    {
-      title: "Reports",
-      url: "/admin/reports",
-      icon: MessageSquareWarning,
-    },
-    {
-      title: "Store Settings",
-      url: "/admin/storesettings",
-      icon: Columns3Cog,
+      title: "Login Audit",
+      url: "/admin/audit",
+      icon: Calendar,
     },
   ],
 }
 
 export function AppSidebar({ ...props }) {
   return (
-    <Sidebar collapsible="icon" {...props}>
-      <SidebarHeader>
+    <Sidebar
+      collapsible="icon"
+      {...props}
+      className="w-64 border-r border-[#E5E7EB] bg-white"
+    >
+      <SidebarHeader className="h-20 border-b border-[#E5E7EB] px-5">
         <TeamSwitcher teams={data.teams} />
       </SidebarHeader>
 
@@ -99,7 +70,7 @@ export function AppSidebar({ ...props }) {
         <NavMain items={data.navMain} />
       </SidebarContent>
 
-      <SidebarFooter>
+      <SidebarFooter className="h-16">
         <NavUser user={data.user} />
       </SidebarFooter>
 

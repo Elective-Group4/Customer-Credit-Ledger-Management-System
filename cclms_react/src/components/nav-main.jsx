@@ -1,60 +1,37 @@
+import { Link, useLocation } from "react-router-dom"
 import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible"
-import {
-  SidebarGroup,
-  SidebarGroupLabel,
   SidebarMenu,
-  SidebarMenuButton,
   SidebarMenuItem,
-  SidebarMenuSub,
-  SidebarMenuSubButton,
-  SidebarMenuSubItem,
+  SidebarMenuButton,
 } from "@/components/ui/sidebar"
-import { createElement } from "react"
-import { ChevronRightIcon } from "lucide-react"
 
-export function NavMain({
-  items
-}) {
+export function NavMain({ items }) {
+  const location = useLocation()
+
   return (
-    <SidebarGroup>
-      <SidebarGroupLabel>Platform</SidebarGroupLabel>
-      <SidebarMenu>
-        {items.map((item) => (
-          <Collapsible
-            key={item.title}
-            asChild
-            defaultOpen={item.isActive}
-            className="group/collapsible"
-          >
-            <SidebarMenuItem>
-              <CollapsibleTrigger asChild>
-                <SidebarMenuButton tooltip={item.title}>
-                  {item.icon && createElement(item.icon)}
-                  <span>{item.title}</span>
-                  <ChevronRightIcon className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
-                </SidebarMenuButton>
-              </CollapsibleTrigger>
-              <CollapsibleContent>
-                <SidebarMenuSub>
-                  {item.items?.map((subItem) => (
-                    <SidebarMenuSubItem key={subItem.title}>
-                      <SidebarMenuSubButton asChild>
-                        <a href={subItem.url}>
-                          <span>{subItem.title}</span>
-                        </a>
-                      </SidebarMenuSubButton>
-                    </SidebarMenuSubItem>
-                  ))}
-                </SidebarMenuSub>
-              </CollapsibleContent>
-            </SidebarMenuItem>
-          </Collapsible>
-        ))}
-      </SidebarMenu>
-    </SidebarGroup>
+    <SidebarMenu className="px-3 py-4">
+      {items.map((item) => {
+        const isActive = location.pathname === item.url
+
+        return (
+          <SidebarMenuItem key={item.title} className="mb-2">
+            <SidebarMenuButton
+              asChild
+              tooltip={item.title}
+              className={`h-12 rounded-lg px-4 text-base transition-colors ${
+                isActive
+                  ? "bg-[#D4A017] text-white hover:bg-[#B8860B] hover:text-white"
+                  : "text-[#6B4226] hover:bg-[#F3F4F6] hover:text-[#6B4226]"
+              }`}
+            >
+              <Link to={item.url}>
+                <item.icon className="size-5" />
+                <span>{item.title}</span>
+              </Link>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+        )
+      })}
+    </SidebarMenu>
   )
 }
