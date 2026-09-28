@@ -1,0 +1,447 @@
+# Supabase Database Setup
+
+This document describes the database required by the Store Owner modules in CCLMS.
+The system uses Supabase Auth for login and Supabase Postgres for store-scoped data.
+
+## Environment Variables
+
+The frontend reads these variables in `src/lib/supabase.js`:
+
+```env
+VITE_SUPABASE_URL=https://your-project-ref.supabase.co
+VITE_SUPABASE_PUBLISHABLE_KEY=your-supabase-publishable-key
+```
+
+Add the same variable names to:
+
+- `cclms_react/.env.local` for local development
+- Vercel Project Settings > Environment Variables for deployment
+
+Do not commit `.env.local` or expose a service-role key in the frontend.
+
+> `SYSTEM_ARCHITECTURE.md` currently mentions `VITE_SUPABASE_ANON_KEY`. The implemented client uses `VITE_SUPABASE_PUBLISHABLE_KEY`; use the implemented name unless the client code is intentionally changed.
+
+## Existing Tables
+
+The current Admin features already use these tables:
+
+### `profiles`
+
+| Column | Type | Required | Notes |
+|---|---|---:|---|
+| `id` | `uuid` | Yes | Primary key; references `auth.users.id` |
+| `full_name` | `text` | Yes | Display name |
+| `email` | `text` | Yes | Account email |
+| `phone_number` | `text` | No | Contact number |
+| `role` | `text` or existing enum | Yes | Must include `admin` and `owner` |
+| `status` | `text` or existing enum | Yes | Normally `active` or `inactive` |
+| `created_at` | `timestamptz` | Yes | Defaults to `now()` |
+
+### `store_owners`
+
+| Column | Type | Required | Notes |
+|---|---|---:|---|
+| `id` | `uuid` | Yes | Store scope primary key |
+| `profile_id` | `uuid` | Yes | FK to `profiles.id`; unique per owner |
+| `store_name` | `text` | Yes | Store name |
+| `branch` | `text` | No | Existing legacy field; this system has no branch model |
+| `created_at` | `timestamptz` | Yes | Defaults to `now()` |
+| `updated_at` | `timestamptz` | Yes | Defaults to `now()` |
+
+The migration below assumes these tables already exist because the Admin side uses them.
+
+## New Enums
+
+```sql
+create type public.product_status as enum ('active', 'inactive');
+create type public.customer_status as enum ('active', 'inactive');
+create type public.payment_type as enum ('full', 'partial');
+```
+
+Run each enum statement only if that enum does not already exist.
+
+## New Tables
+
+### `products`
+
+Stores the owner's product catalog.
+
+- `id uuid primary key`
+- `store_id uuid not null references public.store_owners(id)`
+- `id_code text not null`, unique within a store
+- `name text not null`
+- `price numeric(12,2) not null`, greater than zero
+- `status product_status not null default 'active'`
+- `created_at timestamptz not null default now()`
+- `updated_at timestamptz not null default now()`
+
+### `customers`
+
+Stores customers belonging to one owner store.
+
+- `id uuid primary key`
+- `store_id uuid not null references public.store_owners(id)`
+- `customer_code text not null`, generated as `CUST-000123`
+- `name text not null`
+- `phone_number text not null`
+- `address text not null`
+- `status customer_status not null default 'active'`
+- `created_at timestamptz not null default now()`
+- `updated_at timestamptz not null default now()`
+
+`(store_id, customer_code)` is unique.
+
+### `credit_entries`
+
+Represents one customer credit transaction.
+
+- `id uuid primary key`
+- `store_id uuid not null references public.store_owners(id)`
+- `customer_id uuid not null references public.customers(id)`
+- `total_amount numeric(12,2) not null`
+- `due_date date null`
+- `created_at timestamptz not null default now()`
+- `updated_at timestamptz not null default now()`
+
+### `credit_entry_items`
+
+Stores the products inside a credit transaction. Product name and unit price are snapshots so historical records do not change when the catalog changes.
+
+- `id uuid primary key`
+- `credit_entry_id uuid not null references public.credit_entries(id) on delete cascade`
+- `product_id uuid null references public.products(id) on delete set null`
+- `product_name text not null`
+- `quantity integer not null`, greater than zero
+- `unit_price numeric(12,2) not null`, non-negative
+- `subtotal numeric(12,2) not null`, non-negative
+- `created_at timestamptz not null default now()`
+
+### `payments`
+
+Records full or partial customer payments.
+
+- `id uuid primary key`
+- `store_id uuid not null references public.store_owners(id)`
+- `customer_id uuid not null references public.customers(id)`
+- `amount numeric(12,2) not null`, greater than zero
+- `payment_type payment_type not null`
+- `created_at timestamptz not null default now()`
+
+A customer's balance is calculated as:
+
+```text
+sum(credit_entries.total_amount) - sum(payments.amount)
+```
+
+## Relationships
+
+```text
+profiles 1--1 store_owners
+store_owners 1--many products
+store_owners 1--many customers
+store_owners 1--many credit_entries
+customers 1--many credit_entries
+credit_entries 1--many credit_entry_items
+products 1--many credit_entry_items
+store_owners 1--many payments
+customers 1--many payments
+```
+
+## Required Indexes
+
+```sql
+create index if not exists products_store_name_idx
+  on public.products (store_id, name);
+
+create unique index if not exists products_store_id_code_uidx
+  on public.products (store_id, id_code);
+
+create index if not exists customers_store_name_idx
+  on public.customers (store_id, name);
+
+create index if not exists customers_store_status_idx
+  on public.customers (store_id, status);
+
+create unique index if not exists customers_store_code_uidx
+  on public.customers (store_id, customer_code);
+
+create index if not exists credit_entries_store_customer_idx
+  on public.credit_entries (store_id, customer_id);
+
+create index if not exists credit_entries_store_created_idx
+  on public.credit_entries (store_id, created_at desc);
+
+create index if not exists credit_entries_store_due_idx
+  on public.credit_entries (store_id, due_date);
+
+create index if not exists payments_store_customer_created_idx
+  on public.payments (store_id, customer_id, created_at desc);
+```
+
+## Customer ID Generation
+
+Customer IDs must be generated in PostgreSQL, not in the browser. A sequence provides concurrency-safe unique numbers, and the default expression formats the number.
+
+```sql
+create sequence if not exists public.customer_code_seq
+  as bigint
+  start with 123
+  increment by 1;
+
+alter table public.customers
+  alter column customer_code
+  set default ('CUST-' || lpad(nextval('public.customer_code_seq')::text, 6, '0'));
+```
+
+The frontend requests the next ID through the data-access layer and displays it read-only. The database unique index remains the final protection against duplicates.
+
+## Balance View
+
+```sql
+create or replace view public.owner_customer_balances
+with (security_invoker = true)
+as
+select
+  c.id,
+  c.store_id,
+  c.customer_code,
+  c.name,
+  c.phone_number,
+  c.address,
+  c.status,
+  coalesce(credits.total_credit, 0)::numeric(12,2) -
+    coalesce(payments.total_paid, 0)::numeric(12,2) as balance
+from public.customers c
+left join (
+  select customer_id, sum(total_amount) as total_credit
+  from public.credit_entries
+  group by customer_id
+) credits on credits.customer_id = c.id
+left join (
+  select customer_id, sum(amount) as total_paid
+  from public.payments
+  group by customer_id
+) payments on payments.customer_id = c.id;
+```
+
+## Dashboard RPC Functions
+
+The UI needs these read operations:
+
+- `owner_dashboard_totals()`
+- `owner_credit_ranking()`
+- `owner_monthly_credit_summary()`
+
+Each function must derive the store from `auth.uid()` and must not accept a client-provided store ID.
+
+Example totals function:
+
+```sql
+create or replace function public.owner_dashboard_totals()
+returns table (
+  total_customers bigint,
+  overall_balance numeric,
+  active_customers bigint,
+  customers_due_this_month bigint
+)
+language sql
+stable
+security invoker
+as $$
+  select
+    count(*)::bigint,
+    coalesce(sum(balance), 0)::numeric,
+    count(*) filter (where status = 'active')::bigint,
+    count(*) filter (
+      where balance > 0
+        and exists (
+          select 1
+          from public.credit_entries ce
+          where ce.customer_id = owner_customer_balances.id
+            and ce.due_date >= date_trunc('month', current_date)::date
+            and ce.due_date < (date_trunc('month', current_date) + interval '1 month')::date
+        )
+    )::bigint
+  from public.owner_customer_balances;
+$$;
+```
+
+The ranking function should return `customer_code`, `name`, and `balance`, ordered by `balance desc`. The monthly function should return `month`, `credit`, and `payments`, grouped by month.
+
+## Row Level Security
+
+Enable RLS on every owner-owned table:
+
+```sql
+alter table public.products enable row level security;
+alter table public.customers enable row level security;
+alter table public.credit_entries enable row level security;
+alter table public.credit_entry_items enable row level security;
+alter table public.payments enable row level security;
+```
+
+The policies must ensure that:
+
+1. The authenticated user has an owner profile.
+2. The row's `store_id` belongs to that authenticated profile.
+3. Child rows cannot be inserted for another owner's parent row.
+
+A reusable helper can resolve the current owner's store:
+
+```sql
+create or replace function public.current_owner_store_id()
+returns uuid
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select so.id
+  from public.store_owners so
+  join public.profiles p on p.id = so.profile_id
+  where so.profile_id = auth.uid()
+    and p.role = 'owner'
+  limit 1;
+$$;
+
+revoke all on function public.current_owner_store_id() from public;
+grant execute on function public.current_owner_store_id() to authenticated;
+```
+
+Example policy pattern for `products`:
+
+```sql
+create policy "owner can read own products"
+on public.products for select to authenticated
+using (store_id = public.current_owner_store_id());
+
+create policy "owner can insert own products"
+on public.products for insert to authenticated
+with check (store_id = public.current_owner_store_id());
+
+create policy "owner can update own products"
+on public.products for update to authenticated
+using (store_id = public.current_owner_store_id())
+with check (store_id = public.current_owner_store_id());
+
+create policy "owner can delete own products"
+on public.products for delete to authenticated
+using (store_id = public.current_owner_store_id());
+```
+
+Apply equivalent policies to `customers`, `credit_entries`, and `payments`. For `credit_entry_items`, verify that its `credit_entry_id` belongs to the current owner's store before allowing reads or inserts.
+
+## Ready-to-Run Migration Outline
+
+Run the following in Supabase SQL Editor after confirming the existing `profiles` and `store_owners` column names. If an enum already exists, skip its `create type` statement.
+
+```sql
+create extension if not exists pgcrypto;
+
+create type public.product_status as enum ('active', 'inactive');
+create type public.customer_status as enum ('active', 'inactive');
+create type public.payment_type as enum ('full', 'partial');
+
+create sequence if not exists public.customer_code_seq as bigint start with 123 increment by 1;
+
+create table if not exists public.products (
+  id uuid primary key default gen_random_uuid(),
+  store_id uuid not null references public.store_owners(id),
+  id_code text not null,
+  name text not null,
+  price numeric(12,2) not null check (price > 0),
+  status public.product_status not null default 'active',
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  unique (store_id, id_code)
+);
+
+create table if not exists public.customers (
+  id uuid primary key default gen_random_uuid(),
+  store_id uuid not null references public.store_owners(id),
+  customer_code text not null default ('CUST-' || lpad(nextval('public.customer_code_seq')::text, 6, '0')),
+  name text not null,
+  phone_number text not null,
+  address text not null,
+  status public.customer_status not null default 'active',
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  unique (store_id, customer_code)
+);
+
+create table if not exists public.credit_entries (
+  id uuid primary key default gen_random_uuid(),
+  store_id uuid not null references public.store_owners(id),
+  customer_id uuid not null references public.customers(id),
+  total_amount numeric(12,2) not null check (total_amount >= 0),
+  due_date date,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create table if not exists public.credit_entry_items (
+  id uuid primary key default gen_random_uuid(),
+  credit_entry_id uuid not null references public.credit_entries(id) on delete cascade,
+  product_id uuid references public.products(id) on delete set null,
+  product_name text not null,
+  quantity integer not null check (quantity > 0),
+  unit_price numeric(12,2) not null check (unit_price >= 0),
+  subtotal numeric(12,2) not null check (subtotal >= 0),
+  created_at timestamptz not null default now()
+);
+
+create table if not exists public.payments (
+  id uuid primary key default gen_random_uuid(),
+  store_id uuid not null references public.store_owners(id),
+  customer_id uuid not null references public.customers(id),
+  amount numeric(12,2) not null check (amount > 0),
+  payment_type public.payment_type not null,
+  created_at timestamptz not null default now()
+);
+
+create index if not exists products_store_name_idx on public.products (store_id, name);
+create index if not exists customers_store_name_idx on public.customers (store_id, name);
+create index if not exists credit_entries_store_customer_idx on public.credit_entries (store_id, customer_id);
+create index if not exists credit_entries_store_created_idx on public.credit_entries (store_id, created_at desc);
+create index if not exists payments_store_customer_created_idx on public.payments (store_id, customer_id, created_at desc);
+
+alter table public.products enable row level security;
+alter table public.customers enable row level security;
+alter table public.credit_entries enable row level security;
+alter table public.credit_entry_items enable row level security;
+alter table public.payments enable row level security;
+```
+
+Add the helper function and policies from the RLS section after this schema block. Review existing policies first to avoid duplicate policy names.
+
+## Mock API to Supabase Mapping
+
+The UI currently calls `src/lib/api/owner.js`. Replace the mock implementation there with Supabase queries while preserving the function names:
+
+| Mock API function | Supabase operation |
+|---|---|
+| `listProducts` | `from('products').select('*').order('name')` |
+| `createProduct` | Insert into `products` with the current owner's `store_id` |
+| `updateProduct` | Update `products` by `id`, protected by RLS |
+| `deleteProduct` | Delete `products` by `id`; restrict if historical references require it |
+| `toggleProductStatus` | Update `products.status` |
+| `listCustomers` | Select from `owner_customer_balances` |
+| `nextCustomerCode` | Use a database default or an RPC that previews the next code |
+| `createCustomer` | Insert into `customers`; let PostgreSQL generate `customer_code` |
+| `updateCustomer` | Update `customers` by `id` |
+| `deleteCustomer` | Delete `customers` by `id` after checking history constraints |
+| `listCredits` | Select `credit_entries` with nested `credit_entry_items` |
+| `createCredit` | Insert `credit_entries` and `credit_entry_items` in one RPC/transaction |
+| `createPayment` | Insert into `payments` through an RPC that validates the balance |
+| `listTransactions` | Select credit entries and nested item names |
+| `getDashboard` | Call the three dashboard RPCs |
+
+For credit creation and payment creation, prefer RPC functions so the parent row, child rows, balance validation, and amount calculations are atomic.
+
+## Free-Tier Notes
+
+- Keep indexes limited to the search, owner-scope, date, and foreign-key paths used by the UI.
+- Paginate large queries server-side when the dataset grows.
+- Avoid polling; refresh data after mutations or use Supabase Realtime only when necessary.
+- Do not use the service-role key in Vite or browser code.
+- Monitor database size, bandwidth, Auth users, and Edge Function quotas in the Supabase dashboard.

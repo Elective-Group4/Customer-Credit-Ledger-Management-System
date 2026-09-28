@@ -20,6 +20,7 @@ import {
   UserRoundGroup,
   Calendar,
   ChartPie,
+  LayoutPanelTop,
 } from "lucide-react"
 
 const data = {
@@ -47,6 +48,11 @@ const data = {
       title: "Owner Management",
       url: "/admin/owners",
       icon: UserRoundGroup,
+    },
+    {
+      title: "Landing Page",
+      url: "/admin/landing",
+      icon: LayoutPanelTop,
     },
     {
       title: "Login Audit",

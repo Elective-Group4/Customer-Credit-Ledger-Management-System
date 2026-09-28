@@ -21,7 +21,7 @@ export function NavMain({ items }) {
               className={`h-12 rounded-lg px-4 text-base transition-colors ${
                 isActive
                   ? "bg-[#6B4226] text-white hover:bg-[#B8860B] hover:text-white"
-                  : "text-[#6B4226] hover:bg-[#F3F4F6] hover:text-[#6B4226]"
+                  : "text-black hover:bg-[#F3F4F6] hover:text-[#6B4226]"
               }`}
             >
               <Link to={item.url}>
