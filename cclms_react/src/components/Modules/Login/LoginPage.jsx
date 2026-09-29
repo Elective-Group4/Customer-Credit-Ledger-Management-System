@@ -1,6 +1,6 @@
-import { Eye, EyeOff, LockKeyhole, LogIn, Mail } from "lucide-react";
+import { ArrowLeft, Eye, EyeOff, LockKeyhole, LogIn, Mail } from "lucide-react";
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 
 import Logo from "@/assets/images/logo_sarisari.png";
@@ -414,6 +414,16 @@ export default function LoginPage() {
       >
 
         <div className="flex justify-center gap-2 md:justify-start">
+          <Button
+            asChild
+            variant="ghost"
+            className="-ml-3 text-gray-600 hover:bg-transparent hover:text-gray-950"
+          >
+            <Link to="/">
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              Back to landing page
+            </Link>
+          </Button>
         </div>
 
         <div className="flex flex-1 items-center justify-center">

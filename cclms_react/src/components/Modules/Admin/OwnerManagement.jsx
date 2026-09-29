@@ -616,855 +616,565 @@ export default function OwnerManagement() {
   // =====================================================
 
   return (
-
-    <div className="flex flex-col gap-6 p-6">
+    <div className="flex min-h-full flex-col gap-6 bg-[#FAFAF9] p-5 md:p-7">
 
       {/* PAGE HEADER */}
-
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-
+      <div className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
         <div>
+          <div className="mb-1 flex items-center gap-2">
+            <span className="h-2 w-2 rounded-full bg-[#8B4E2F]" />
+            <span className="text-xs font-semibold uppercase tracking-[0.12em] text-[#8B4E2F]">
+              Administration
+            </span>
+          </div>
 
-          <h1 className="text-2xl font-semibold tracking-tight">
+          <h1 className="text-3xl font-bold tracking-tight text-[#171717]">
             Store Owner Management
           </h1>
 
-          <p className="text-sm text-muted-foreground">
+          <p className="mt-1 text-sm text-muted-foreground">
             Manage store owner accounts and store information.
           </p>
-
         </div>
-
 
         <Button
           onClick={openAddDialog}
-          className = "bg-[#D4A017] text-white hover:bg-[#D4A017]/90 h-10 px-4 text-base"
+          className="h-11 rounded-lg bg-[#D4A017] px-5 font-semibold text-white shadow-sm hover:bg-[#BD8D0F]"
         >
-
           <Plus className="mr-2 h-4 w-4" />
-
           Add Store Owner
-
         </Button>
+      </div>
 
+
+      {/* SUMMARY */}
+      <div className="grid gap-3 sm:grid-cols-3">
+        <div className="rounded-xl border border-stone-200 bg-white px-4 py-3 shadow-sm">
+          <p className="text-xs font-medium text-muted-foreground">Total Owners</p>
+          <p className="mt-1 text-2xl font-bold tracking-tight text-[#171717]">
+            {loading ? "..." : owners.length}
+          </p>
+        </div>
+
+        <div className="rounded-xl border border-stone-200 bg-white px-4 py-3 shadow-sm">
+          <p className="text-xs font-medium text-muted-foreground">Active Owners</p>
+          <p className="mt-1 text-2xl font-bold tracking-tight text-[#171717]">
+            {loading
+              ? "..."
+              : owners.filter(
+                  (owner) =>
+                    (owner.profiles?.status || "active").toLowerCase() === "active"
+                ).length}
+          </p>
+        </div>
+
+        <div className="rounded-xl border border-stone-200 bg-white px-4 py-3 shadow-sm">
+          <p className="text-xs font-medium text-muted-foreground">Inactive Owners</p>
+          <p className="mt-1 text-2xl font-bold tracking-tight text-[#171717]">
+            {loading
+              ? "..."
+              : owners.filter(
+                  (owner) =>
+                    (owner.profiles?.status || "active").toLowerCase() !== "active"
+                ).length}
+          </p>
+        </div>
       </div>
 
 
       {/* OWNER CARD */}
-
-      <Card>
-
-        <CardHeader>
-
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-
-            <CardTitle>
-              Store Owners
-            </CardTitle>
-
-
-            {/* SEARCH */}
-
-            <div className="relative w-full sm:w-[300px]">
-
-              <Search
-                className="
-                  absolute
-                  left-3
-                  top-1/2
-                  h-4
-                  w-4
-                  -translate-y-1/2
-                  text-muted-foreground
-                "
-              />
-
-              <Input
-                value={search}
-                onChange={(event) =>
-                  setSearch(
-                    event.target.value
-                  )
-                }
-                placeholder="Search owner or store..."
-                className="pl-9"
-              />
-
+      <Card className="overflow-hidden rounded-xl border-stone-200 bg-white shadow-sm">
+        <CardHeader className="border-b border-stone-100 px-5 py-5 md:px-6">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+            <div>
+              <CardTitle className="text-lg font-semibold text-[#171717]">
+                Store Owners
+              </CardTitle>
+              <p className="mt-1 text-sm text-muted-foreground">
+                View and manage registered store owner accounts.
+              </p>
             </div>
 
+            {/* SEARCH */}
+            <div className="relative w-full lg:w-[320px]">
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-stone-400" />
+              <Input
+                value={search}
+                onChange={(event) => setSearch(event.target.value)}
+                placeholder="Search owner, email, or store..."
+                className="h-10 rounded-lg border-stone-200 bg-stone-50 pl-9 shadow-none placeholder:text-stone-400 focus-visible:ring-[#8B4E2F]/30"
+              />
+            </div>
           </div>
-
         </CardHeader>
 
-
-        <CardContent>
-
-          <div className="rounded-md border">
-
+        <CardContent className="p-0">
+          <div className="overflow-x-auto">
             <Table>
-
               <TableHeader>
-
-                <TableRow>
-
-                  <TableHead>
+                <TableRow className="border-stone-100 bg-stone-50/70 hover:bg-stone-50/70">
+                  <TableHead className="h-11 px-5 text-xs font-semibold uppercase tracking-wide text-stone-500 md:px-6">
                     Store Owner
                   </TableHead>
-
-                  <TableHead>
-                    Email
+                  <TableHead className="h-11 text-xs font-semibold uppercase tracking-wide text-stone-500">
+                    Contact
                   </TableHead>
-
-                  <TableHead>
-                    Phone
-                  </TableHead>
-
-                  <TableHead>
+                  <TableHead className="h-11 text-xs font-semibold uppercase tracking-wide text-stone-500">
                     Store
                   </TableHead>
-
-                  <TableHead>
+                  <TableHead className="h-11 text-xs font-semibold uppercase tracking-wide text-stone-500">
                     Branch
                   </TableHead>
-
-                  <TableHead>
+                  <TableHead className="h-11 text-xs font-semibold uppercase tracking-wide text-stone-500">
                     Status
                   </TableHead>
-
-                  <TableHead className="w-[60px]">
-                    <span className="sr-only">
-                      Actions
-                    </span>
+                  <TableHead className="h-11 w-[60px] pr-5 md:pr-6">
+                    <span className="sr-only">Actions</span>
                   </TableHead>
-
                 </TableRow>
-
               </TableHeader>
 
-
               <TableBody>
-
                 {/* LOADING */}
-
                 {loading && (
-
                   <TableRow>
-
-                    <TableCell
-                      colSpan={7}
-                      className="h-32 text-center"
-                    >
-
-                      <Loader2
-                        className="
-                          mx-auto
-                          h-6
-                          w-6
-                          animate-spin
-                          text-muted-foreground
-                        "
-                      />
-
+                    <TableCell colSpan={6} className="h-36 text-center">
+                      <div className="flex flex-col items-center justify-center gap-2 text-muted-foreground">
+                        <Loader2 className="h-5 w-5 animate-spin text-[#8B4E2F]" />
+                        <span className="text-sm">Loading store owners...</span>
+                      </div>
                     </TableCell>
-
                   </TableRow>
-
                 )}
 
-
                 {/* EMPTY */}
-
-                {!loading &&
-                  filteredOwners.length === 0 && (
-
-                    <TableRow>
-
-                      <TableCell
-                        colSpan={7}
-                        className="
-                          h-32
-                          text-center
-                          text-muted-foreground
-                        "
-                      >
-                        No store owners found.
-                      </TableCell>
-
-                    </TableRow>
-
-                  )}
-
+                {!loading && filteredOwners.length === 0 && (
+                  <TableRow>
+                    <TableCell colSpan={6} className="h-40 text-center">
+                      <div className="flex flex-col items-center justify-center">
+                        <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-full bg-[#F5EEE9] text-[#8B4E2F]">
+                          <Search className="h-4 w-4" />
+                        </div>
+                        <p className="text-sm font-medium text-[#171717]">
+                          No store owners found
+                        </p>
+                        <p className="mt-1 text-xs text-muted-foreground">
+                          Try changing your search or add a new store owner.
+                        </p>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                )}
 
                 {/* DATA */}
-
                 {!loading &&
-                  filteredOwners.map(
-                    (owner) => (
+                  filteredOwners.map((owner) => {
+                    const ownerName = owner.profiles?.full_name || "Unknown"
+                    const initials = ownerName
+                      .split(" ")
+                      .filter(Boolean)
+                      .slice(0, 2)
+                      .map((part) => part.charAt(0))
+                      .join("")
+                      .toUpperCase() || "OW"
 
+                    const status = owner.profiles?.status || "active"
+                    const isActive = status.toLowerCase() === "active"
+
+                    return (
                       <TableRow
                         key={owner.id}
+                        className="border-stone-100 transition-colors hover:bg-stone-50/70"
                       >
-
-                        <TableCell className="font-medium">
-
-                          {owner.profiles?.full_name ||
-                            "Unknown"}
-
+                        <TableCell className="px-5 py-4 md:px-6">
+                          <div className="flex items-center gap-3">
+                            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#F5EEE9] text-xs font-bold text-[#8B4E2F]">
+                              {initials}
+                            </div>
+                            <div className="min-w-0">
+                              <p className="truncate text-sm font-semibold text-[#171717]">
+                                {ownerName}
+                              </p>
+                              <p className="mt-0.5 text-xs text-muted-foreground">
+                                Store Owner
+                              </p>
+                            </div>
+                          </div>
                         </TableCell>
 
-
-                        <TableCell>
-
-                          {owner.profiles?.email ||
-                            "-"}
-
+                        <TableCell className="py-4">
+                          <div className="min-w-[190px]">
+                            <p className="truncate text-sm text-[#171717]">
+                              {owner.profiles?.email || "-"}
+                            </p>
+                            <p className="mt-0.5 text-xs text-muted-foreground">
+                              {owner.profiles?.phone_number || "No phone number"}
+                            </p>
+                          </div>
                         </TableCell>
 
-
-                        <TableCell>
-
-                          {owner.profiles?.phone_number ||
-                            "-"}
-
+                        <TableCell className="py-4">
+                          <p className="text-sm font-medium text-[#171717]">
+                            {owner.store_name || "-"}
+                          </p>
                         </TableCell>
 
-
-                        <TableCell>
-
-                          {owner.store_name}
-
+                        <TableCell className="py-4">
+                          <p className="text-sm text-[#171717]">
+                            {owner.branch || "-"}
+                          </p>
                         </TableCell>
 
-
-                        <TableCell>
-
-                          {owner.branch}
-
-                        </TableCell>
-
-
-                        <TableCell>
-
+                        <TableCell className="py-4">
                           <span
-                            className={`
-                              inline-flex
-                              items-center
-                              rounded-full
-                              px-2.5
-                              py-0.5
-                              text-xs
-                              font-medium
-                              ${
-                                owner.profiles?.status ===
-                                "active"
-                                  ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
-                                  : "bg-muted text-muted-foreground"
-                              }
-                            `}
+                            className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold capitalize ${
+                              isActive
+                                ? "bg-emerald-50 text-emerald-700"
+                                : "bg-stone-100 text-stone-600"
+                            }`}
                           >
-
-                            {owner.profiles?.status ||
-                              "active"}
-
+                            <span
+                              className={`h-1.5 w-1.5 rounded-full ${
+                                isActive ? "bg-emerald-600" : "bg-stone-400"
+                              }`}
+                            />
+                            {status}
                           </span>
-
                         </TableCell>
-
 
                         {/* ACTIONS */}
-
-                        <TableCell>
-
+                        <TableCell className="pr-5 text-right md:pr-6">
                           <DropdownMenu>
-
-                            <DropdownMenuTrigger
-                              asChild
-                            >
-
+                            <DropdownMenuTrigger asChild>
                               <Button
                                 variant="ghost"
                                 size="icon"
+                                className="h-8 w-8 rounded-lg text-stone-500 hover:bg-stone-100 hover:text-[#8B4E2F]"
                               >
-
-                                <MoreHorizontal
-                                  className="h-4 w-4"
-                                />
-
-                                <span className="sr-only">
-                                  Open menu
-                                </span>
-
+                                <MoreHorizontal className="h-4 w-4" />
+                                <span className="sr-only">Open menu</span>
                               </Button>
-
                             </DropdownMenuTrigger>
-
 
                             <DropdownMenuContent
                               align="end"
+                              className="w-40 rounded-lg border-stone-200"
                             >
-
-                              <DropdownMenuItem
-                                onClick={() =>
-                                  viewOwner(owner)
-                                }
-                              >
-
+                              <DropdownMenuItem onClick={() => viewOwner(owner)}>
                                 <Eye className="mr-2 h-4 w-4" />
-
-                                View
-
+                                View Details
                               </DropdownMenuItem>
 
-
-                              <DropdownMenuItem
-                                onClick={() =>
-                                  openEditDialog(owner)
-                                }
-                              >
-
+                              <DropdownMenuItem onClick={() => openEditDialog(owner)}>
                                 <Pencil className="mr-2 h-4 w-4" />
-
-                                Edit
-
+                                Edit Owner
                               </DropdownMenuItem>
-
 
                               <DropdownMenuSeparator />
 
-
                               <DropdownMenuItem
-                                className="text-destructive focus:text-destructive"
-                                onClick={() =>
-                                  openDeleteDialog(
-                                    owner
-                                  )
-                                }
+                                className="text-red-600 focus:bg-red-50 focus:text-red-600"
+                                onClick={() => openDeleteDialog(owner)}
                               >
-
                                 <Trash2 className="mr-2 h-4 w-4" />
-
-                                Delete
-
+                                Delete Owner
                               </DropdownMenuItem>
-
                             </DropdownMenuContent>
-
                           </DropdownMenu>
-
                         </TableCell>
-
                       </TableRow>
-
                     )
-                  )}
-
+                  })}
               </TableBody>
-
             </Table>
-
           </div>
-
         </CardContent>
-
       </Card>
 
 
       {/* ================================================= */}
       {/* ADD / EDIT DIALOG */}
       {/* ================================================= */}
-
-      <Dialog
-        open={dialogOpen}
-        onOpenChange={setDialogOpen}
-      >
-
-        <DialogContent className="sm:max-w-[550px]">
-
-          <DialogHeader>
-
-            <DialogTitle>
-
-              {editingOwner
-                ? "Edit Store Owner"
-                : "Add Store Owner"}
-
-            </DialogTitle>
-
-            <DialogDescription>
-
-              {editingOwner
-                ? "Update the store owner and store information."
-                : "Create a new store owner account."}
-
-            </DialogDescription>
-
+      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        <DialogContent className="overflow-hidden rounded-2xl border-stone-200 p-0 shadow-xl sm:max-w-[560px]">
+          <DialogHeader className="border-b border-stone-100 bg-stone-50/70 px-6 py-5">
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#F5EEE9] text-[#8B4E2F]">
+                {editingOwner ? (
+                  <Pencil className="h-4 w-4" />
+                ) : (
+                  <Plus className="h-5 w-5" />
+                )}
+              </div>
+              <div>
+                <DialogTitle className="text-lg text-[#171717]">
+                  {editingOwner ? "Edit Store Owner" : "Add Store Owner"}
+                </DialogTitle>
+                <DialogDescription className="mt-1">
+                  {editingOwner
+                    ? "Update the store owner and store information."
+                    : "Create a new store owner account."}
+                </DialogDescription>
+              </div>
+            </div>
           </DialogHeader>
 
-
-          <div className="grid gap-4 py-4">
-
-
-            {/* NAME */}
-
+          <div className="grid gap-5 px-6 py-5">
             <div className="grid gap-2">
-
-              <Label htmlFor="full_name">
-                Store Owner Name
-              </Label>
-
+              <Label htmlFor="full_name">Store Owner Name</Label>
               <Input
                 id="full_name"
                 value={form.full_name}
-                onChange={(event) =>
-                  handleChange(
-                    "full_name",
-                    event.target.value
-                  )
-                }
+                onChange={(event) => handleChange("full_name", event.target.value)}
                 placeholder="Juan Dela Cruz"
+                className="h-10 border-stone-200 focus-visible:ring-[#8B4E2F]/30"
               />
-
             </div>
 
-
-            {/* EMAIL */}
-
             <div className="grid gap-2">
-
-              <Label htmlFor="email">
-                Email
-              </Label>
-
+              <Label htmlFor="email">Email</Label>
               <Input
                 id="email"
                 type="email"
                 value={form.email}
                 disabled={!!editingOwner}
-                onChange={(event) =>
-                  handleChange(
-                    "email",
-                    event.target.value
-                  )
-                }
+                onChange={(event) => handleChange("email", event.target.value)}
                 placeholder="juan@example.com"
+                className="h-10 border-stone-200 focus-visible:ring-[#8B4E2F]/30"
               />
-
               {editingOwner && (
-
-                <p className="text-xs text-muted-foreground">
+                <p className="text-xs leading-relaxed text-muted-foreground">
                   Auth email changes require a server-side admin operation and are not available from the browser form.
                 </p>
-
               )}
-
             </div>
 
-
-            {/* PASSWORD */}
-
             {!editingOwner && (
-
               <div className="grid gap-2">
-
-                <Label htmlFor="password">
-                  Password
-                </Label>
-
+                <Label htmlFor="password">Password</Label>
                 <Input
                   id="password"
                   type="password"
                   value={form.password}
-                  onChange={(event) =>
-                    handleChange(
-                      "password",
-                      event.target.value
-                    )
-                  }
+                  onChange={(event) => handleChange("password", event.target.value)}
                   placeholder="Enter password"
+                  className="h-10 border-stone-200 focus-visible:ring-[#8B4E2F]/30"
                 />
-
-                <p className="text-xs text-muted-foreground">
-                  Minimum 6 characters.
-                </p>
-
+                <p className="text-xs text-muted-foreground">Minimum 6 characters.</p>
               </div>
-
             )}
 
+            <div className="grid gap-5 sm:grid-cols-2">
+              <div className="grid gap-2">
+                <Label htmlFor="phone_number">Phone Number</Label>
+                <Input
+                  id="phone_number"
+                  value={form.phone_number}
+                  onChange={(event) => handleChange("phone_number", event.target.value)}
+                  placeholder="09171234567"
+                  className="h-10 border-stone-200 focus-visible:ring-[#8B4E2F]/30"
+                />
+              </div>
 
-            {/* PHONE */}
-
-            <div className="grid gap-2">
-
-              <Label htmlFor="phone_number">
-                Phone Number
-              </Label>
-
-              <Input
-                id="phone_number"
-                value={form.phone_number}
-                onChange={(event) =>
-                  handleChange(
-                    "phone_number",
-                    event.target.value
-                  )
-                }
-                placeholder="09171234567"
-              />
-
+              <div className="grid gap-2">
+                <Label htmlFor="store_name">Store Name</Label>
+                <Input
+                  id="store_name"
+                  value={form.store_name}
+                  onChange={(event) => handleChange("store_name", event.target.value)}
+                  placeholder="Juan Sari-Sari Store"
+                  className="h-10 border-stone-200 focus-visible:ring-[#8B4E2F]/30"
+                />
+              </div>
             </div>
 
+            <div className="grid gap-5 sm:grid-cols-2">
+              <div className="grid gap-2">
+                <Label htmlFor="branch">Branch</Label>
+                <Input
+                  id="branch"
+                  value={form.branch}
+                  onChange={(event) => handleChange("branch", event.target.value)}
+                  placeholder="Main Branch"
+                  className="h-10 border-stone-200 focus-visible:ring-[#8B4E2F]/30"
+                />
+              </div>
 
-            {/* STORE NAME */}
-
-            <div className="grid gap-2">
-
-              <Label htmlFor="store_name">
-                Store Name
-              </Label>
-
-              <Input
-                id="store_name"
-                value={form.store_name}
-                onChange={(event) =>
-                  handleChange(
-                    "store_name",
-                    event.target.value
-                  )
-                }
-                placeholder="Juan Sari-Sari Store"
-              />
-
+              <div className="grid gap-2">
+                <Label>Status</Label>
+                <Select
+                  value={form.status}
+                  onValueChange={(value) => handleChange("status", value)}
+                >
+                  <SelectTrigger className="h-10 border-stone-200 focus:ring-[#8B4E2F]/30">
+                    <SelectValue placeholder="Select status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="active">Active</SelectItem>
+                    <SelectItem value="inactive">Inactive</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
-
-
-            {/* BRANCH */}
-
-            <div className="grid gap-2">
-
-              <Label htmlFor="branch">
-                Branch
-              </Label>
-
-              <Input
-                id="branch"
-                value={form.branch}
-                onChange={(event) =>
-                  handleChange(
-                    "branch",
-                    event.target.value
-                  )
-                }
-                placeholder="Main Branch"
-              />
-
-            </div>
-
-
-            {/* STATUS */}
-
-            <div className="grid gap-2">
-
-              <Label>
-                Status
-              </Label>
-
-              <Select
-                value={form.status}
-                onValueChange={(value) =>
-                  handleChange(
-                    "status",
-                    value
-                  )
-                }
-              >
-
-                <SelectTrigger>
-
-                  <SelectValue
-                    placeholder="Select status"
-                  />
-
-                </SelectTrigger>
-
-                <SelectContent>
-
-                  <SelectItem value="active">
-                    Active
-                  </SelectItem>
-
-                  <SelectItem value="inactive">
-                    Inactive
-                  </SelectItem>
-
-                </SelectContent>
-
-              </Select>
-
-            </div>
-
           </div>
 
-
-          <DialogFooter>
-
+          <DialogFooter className="border-t border-stone-100 bg-stone-50/50 px-6 pt-4 pb-8">
             <Button
               variant="outline"
-              onClick={() =>
-                setDialogOpen(false)
-              }
+              onClick={() => setDialogOpen(false)}
               disabled={saving}
+              className="border-stone-200 bg-white"
             >
               Cancel
             </Button>
 
-
             <Button
-              onClick={
-                editingOwner
-                  ? updateOwner
-                  : createOwner
-              }
+              onClick={editingOwner ? updateOwner : createOwner}
               disabled={saving}
+              className="bg-[#8B4E2F] text-white hover:bg-[#713D24]"
             >
-
-              {saving && (
-
-                <Loader2
-                  className="
-                    mr-2
-                    h-4
-                    w-4
-                    animate-spin
-                  "
-                />
-
-              )}
-
-              {editingOwner
-                ? "Save Changes"
-                : "Create Owner"}
-
+              {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {editingOwner ? "Save Changes" : "Create Owner"}
             </Button>
-
           </DialogFooter>
-
         </DialogContent>
-
       </Dialog>
 
 
       {/* ================================================= */}
       {/* VIEW OWNER */}
       {/* ================================================= */}
-
-      <Dialog
-        open={viewDialogOpen}
-        onOpenChange={setViewDialogOpen}
-      >
-
-        <DialogContent className="sm:max-w-[500px]">
-
-          <DialogHeader>
-
-            <DialogTitle>
+      <Dialog open={viewDialogOpen} onOpenChange={setViewDialogOpen}>
+        <DialogContent className="overflow-hidden rounded-2xl border-stone-200 p-0 shadow-xl sm:max-w-[520px]">
+          <DialogHeader className="border-b border-stone-100 bg-stone-50/70 px-6 py-5">
+            <DialogTitle className="text-lg text-[#171717]">
               Store Owner Details
             </DialogTitle>
-
             <DialogDescription>
               View account and store information.
             </DialogDescription>
-
           </DialogHeader>
 
-
           {selectedOwner && (
+            <div className="px-6 py-6">
+              <div className="overflow-hidden rounded-2xl border border-stone-200 bg-white shadow-sm">
+                <div className="h-20 bg-[#8B4E2F]" />
 
-            <div className="grid gap-5 py-4">
+                <div className="relative px-6 pb-6">
+                  <div className="-mt-10 flex items-end justify-between">
+                    <div className="flex h-20 w-20 items-center justify-center rounded-2xl border-4 border-white bg-[#F5EEE9] text-2xl font-bold text-[#8B4E2F] shadow-sm">
+                      {selectedOwner.profiles?.full_name?.charAt(0).toUpperCase() || "?"}
+                    </div>
 
+                    <span
+                      className={`mb-2 inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold capitalize ${
+                        selectedOwner.profiles?.status?.toLowerCase() === "active"
+                          ? "bg-emerald-50 text-emerald-700"
+                          : "bg-stone-100 text-stone-600"
+                      }`}
+                    >
+                      <span
+                        className={`h-1.5 w-1.5 rounded-full ${
+                          selectedOwner.profiles?.status?.toLowerCase() === "active"
+                            ? "bg-emerald-600"
+                            : "bg-stone-400"
+                        }`}
+                      />
+                      {selectedOwner.profiles?.status || "Active"}
+                    </span>
+                  </div>
 
-              <div className="grid gap-1">
+                  <div className="mt-4 border-b border-stone-100 pb-5">
+                    <h3 className="text-xl font-bold tracking-tight text-[#171717]">
+                      {selectedOwner.profiles?.full_name || "Unknown Owner"}
+                    </h3>
+                    <p className="mt-1 text-sm text-muted-foreground">
+                      Store Owner · {selectedOwner.store_name || "-"}
+                    </p>
+                  </div>
 
-                <p className="text-sm text-muted-foreground">
-                  Store Owner
-                </p>
+                  <div className="grid gap-5 pt-5 sm:grid-cols-2">
+                    <div>
+                      <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                        Email Address
+                      </p>
+                      <p className="mt-1 break-all text-sm font-medium text-[#171717]">
+                        {selectedOwner.profiles?.email || "-"}
+                      </p>
+                    </div>
 
-                <p className="font-medium">
-                  {selectedOwner.profiles?.full_name ||
-                    "-"}
-                </p>
+                    <div>
+                      <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                        Phone Number
+                      </p>
+                      <p className="mt-1 text-sm font-medium text-[#171717]">
+                        {selectedOwner.profiles?.phone_number || "-"}
+                      </p>
+                    </div>
 
+                    <div>
+                      <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                        Branch Assignment
+                      </p>
+                      <p className="mt-1 text-sm font-medium text-[#171717]">
+                        {selectedOwner.branch || "-"}
+                      </p>
+                    </div>
+
+                    <div>
+                      <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                        Date Issued
+                      </p>
+                      <p className="mt-1 text-sm font-medium text-[#171717]">
+                        {selectedOwner.created_at
+                          ? new Date(selectedOwner.created_at).toLocaleDateString()
+                          : "-"}
+                      </p>
+                    </div>
+                  </div>
+                </div>
               </div>
-
-
-              <div className="grid gap-1">
-
-                <p className="text-sm text-muted-foreground">
-                  Email
-                </p>
-
-                <p className="font-medium">
-                  {selectedOwner.profiles?.email ||
-                    "-"}
-                </p>
-
-              </div>
-
-
-              <div className="grid gap-1">
-
-                <p className="text-sm text-muted-foreground">
-                  Phone Number
-                </p>
-
-                <p className="font-medium">
-                  {selectedOwner.profiles?.phone_number ||
-                    "-"}
-                </p>
-
-              </div>
-
-
-              <div className="grid gap-1">
-
-                <p className="text-sm text-muted-foreground">
-                  Store Name
-                </p>
-
-                <p className="font-medium">
-                  {selectedOwner.store_name}
-                </p>
-
-              </div>
-
-
-              <div className="grid gap-1">
-
-                <p className="text-sm text-muted-foreground">
-                  Branch
-                </p>
-
-                <p className="font-medium">
-                  {selectedOwner.branch}
-                </p>
-
-              </div>
-
-
-              <div className="grid gap-1">
-
-                <p className="text-sm text-muted-foreground">
-                  Status
-                </p>
-
-                <p className="font-medium capitalize">
-                  {selectedOwner.profiles?.status ||
-                    "active"}
-                </p>
-
-              </div>
-
-
-              <div className="grid gap-1">
-
-                <p className="text-sm text-muted-foreground">
-                  Created
-                </p>
-
-                <p className="font-medium">
-
-                  {selectedOwner.created_at
-                    ? new Date(
-                        selectedOwner.created_at
-                      ).toLocaleString()
-                    : "-"}
-
-                </p>
-
-              </div>
-
             </div>
-
           )}
-
         </DialogContent>
-
       </Dialog>
 
 
       {/* ================================================= */}
       {/* DELETE CONFIRMATION */}
       {/* ================================================= */}
-
       <AlertDialog
         open={deleteDialogOpen}
         onOpenChange={setDeleteDialogOpen}
       >
-
-        <AlertDialogContent>
-
+        <AlertDialogContent className="rounded-2xl border-stone-200">
           <AlertDialogHeader>
-
-            <AlertDialogTitle>
-              Delete Store Owner?
-            </AlertDialogTitle>
-
+            <AlertDialogTitle>Delete Store Owner?</AlertDialogTitle>
             <AlertDialogDescription>
-
               Are you sure you want to delete{" "}
-
-              <span className="font-medium text-foreground">
-
+              <span className="font-semibold text-foreground">
                 {ownerToDelete?.profiles?.full_name}
-
               </span>
-
-              ? This will remove the store owner's
-              account and store information.
-
+              ? This will remove the store owner's account and store information.
             </AlertDialogDescription>
-
           </AlertDialogHeader>
 
-
           <AlertDialogFooter>
-
-            <AlertDialogCancel
-              disabled={saving}
-            >
+            <AlertDialogCancel disabled={saving}>
               Cancel
             </AlertDialogCancel>
-
 
             <AlertDialogAction
               onClick={deleteOwner}
               disabled={saving}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              className="bg-red-600 text-white hover:bg-red-700"
             >
-
-              {saving && (
-
-                <Loader2
-                  className="
-                    mr-2
-                    h-4
-                    w-4
-                    animate-spin
-                  "
-                />
-
-              )}
-
-              Delete
-
+              {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Delete Owner
             </AlertDialogAction>
-
           </AlertDialogFooter>
-
         </AlertDialogContent>
-
       </AlertDialog>
-
     </div>
   )
 }

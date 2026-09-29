@@ -14,10 +14,12 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 
 // Modules
 import LoginPage from "./components/Modules/Login/LoginPage"
+import LandingPage from "./components/Modules/LandingPage/LandingPage"
 import AdminDashboard from "./components/Modules/Admin/AdminDashboard"
 import OwnerManagement from "./components/Modules/Admin/OwnerManagement"
 import AdminLayout from "./components/Modules/Admin/AdminLayout"
 import AdminLogs from "./components/Modules/Admin/AdminLogs"
+import LandingPageManagement from "./components/Modules/Admin/LandingPageManagement"
 import OwnerLayout from "./components/Modules/StoreOwner/OwnerLayout"
 import OwnerDashboard from "./components/Modules/StoreOwner/OwnerDashboard"
 import CreditTab from "./components/Modules/StoreOwner/CreditTab"
@@ -168,10 +170,7 @@ export default function App() {
           <Route
             path="/"
             element={
-              <Navigate
-                to="/login"
-                replace
-              />
+              <LandingPage />
             }
           />
 
@@ -207,6 +206,10 @@ export default function App() {
             <Route
               path="logs"
               element={<AdminLogs />}
+            />
+            <Route
+              path="landing"
+              element={<LandingPageManagement />}
             />
           </Route>
 
