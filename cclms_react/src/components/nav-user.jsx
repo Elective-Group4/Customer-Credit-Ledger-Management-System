@@ -156,15 +156,15 @@ export function NavUser({
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
             <DropdownMenuItem
+              className="gap-2 rounded-lg text-red-500 focus:bg-red-100 focus:text-red-600"
               onSelect={(e) => {
                 e.preventDefault()
                 setLogoutDialogOpen(true)
               }}
             >
-              <div className="bg-red-500 text-white rounded-lg px-2 py-1 flex items-center gap-2 w-full">
-              <LogOutIcon />
+              
+              <LogOutIcon style={{ color: "#ef4444", stroke: "#ef4444" }} />
               Log out
-              </div>
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

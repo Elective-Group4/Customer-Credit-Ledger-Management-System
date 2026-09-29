@@ -70,7 +70,7 @@ export function AppSidebar({ ...props }) {
       className="w-64 border-r border-[#E5E7EB] bg-white"
     >
       <SidebarHeader className="h-20 border-b border-[#E5E7EB] px-5">
-        <TeamSwitcher teams={data.teams} />
+        <TeamSwitcher teams={data.teams} role="ADMIN" />
       </SidebarHeader>
 
       <SidebarContent>

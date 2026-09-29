@@ -239,7 +239,7 @@ export default function App() {
             path="*"
             element={
               <Navigate
-                to="/login"
+                to="/"
                 replace
               />
             }

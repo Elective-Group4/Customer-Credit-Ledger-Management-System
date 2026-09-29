@@ -9,7 +9,7 @@ import {
   SidebarTrigger,
 } from "@/components/ui/sidebar"
 
-export function TeamSwitcher({ teams }) {
+export function TeamSwitcher({ teams, role }) {
   const activeTeam = teams?.[0]
 
   if (!activeTeam) {
@@ -26,7 +26,7 @@ export function TeamSwitcher({ teams }) {
             </span>
 
             <span className="rounded-full bg-[#D4A017] px-3 py-1 text-xs font-bold text-white">
-              ADMIN
+              {role}
             </span>
           </div>
 
