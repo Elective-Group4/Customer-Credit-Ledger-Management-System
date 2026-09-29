@@ -225,14 +225,6 @@ export default function AdminDashboard() {
       <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
 
         <div>
-          <div className="mb-1 flex items-center gap-2">
-            <div className="h-2 w-2 rounded-full bg-[#8B4E2F]" />
-
-            <span className="text-sm font-medium text-[#8B4E2F]">
-              CCLMS Administration
-            </span>
-          </div>
-
           <h1 className="text-3xl font-bold tracking-tight text-[#171717] md:text-4xl">
             Admin Dashboard
           </h1>

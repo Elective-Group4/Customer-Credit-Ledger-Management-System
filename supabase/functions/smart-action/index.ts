@@ -56,6 +56,11 @@ Deno.serve(async (request) => {
     }
 
     const body = await request.json()
+    const forwardedIp = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim()
+    const ipAddress = String(body.ip_address ?? "").trim() ||
+      forwardedIp ||
+      request.headers.get("cf-connecting-ip") ||
+      null
     const action = String(body.action ?? "create_owner").trim()
 
     if (!["create_owner", "update_owner", "delete_owner"].includes(action)) {
@@ -184,6 +189,18 @@ Deno.serve(async (request) => {
         return response({ success: false, message: storeOwnerUpdateError.message }, 400)
       }
 
+      const { error: adminLogError } = await serviceClient.from("admin_logs").insert({
+        admin_id: adminUser.id,
+        action: "UPDATE_OWNER",
+        target_user_id: profileId,
+        target_name: String(body.full_name).trim(),
+        ip_address: ipAddress,
+      })
+
+      if (adminLogError) {
+        console.error("Update owner log error", adminLogError)
+      }
+
       return response({ success: true, profile_id: profileId })
     }
 
@@ -256,6 +273,18 @@ Deno.serve(async (request) => {
         return response({ success: false, message: authDeleteError.message }, 400)
       }
 
+      const { error: adminLogError } = await serviceClient.from("admin_logs").insert({
+        admin_id: adminUser.id,
+        action: "DELETE_OWNER",
+        target_user_id: null,
+        target_name: ownerProfile.full_name,
+        ip_address: ipAddress,
+      })
+
+      if (adminLogError) {
+        console.error("Delete owner log error", adminLogError)
+      }
+
       return response({ success: true })
     }
 
@@ -302,12 +331,6 @@ Deno.serve(async (request) => {
       await serviceClient.auth.admin.deleteUser(profileId)
       return response({ success: false, message: storeOwnerError.message }, 400)
     }
-
-    const forwardedIp = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim()
-    const ipAddress = String(body.ip_address ?? "").trim() ||
-      forwardedIp ||
-      request.headers.get("cf-connecting-ip") ||
-      null
 
     const { error: adminLogError } = await serviceClient.from("admin_logs").insert({
       admin_id: adminUser.id,

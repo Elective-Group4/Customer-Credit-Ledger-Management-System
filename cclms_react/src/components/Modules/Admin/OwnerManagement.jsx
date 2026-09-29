@@ -353,15 +353,27 @@ export default function OwnerManagement() {
 
     await fetchOwners()
   } catch (error) {
+    let errorMessage = error?.message || "The owner could not be created."
+
+    if (error?.context instanceof Response) {
+      try {
+        const responseBody = await error.context.clone().json()
+        errorMessage = responseBody?.message || errorMessage
+      } catch {
+        // Keep the generic FunctionsHttpError message when the response is not JSON.
+      }
+    }
+
     console.error(
       "Create owner error:",
-      error
+      error,
+      { message: errorMessage }
     )
 
     toast.error(
       "Failed to create store owner",
       {
-        description: error.message,
+        description: errorMessage,
       }
     )
   } finally {
@@ -621,13 +633,6 @@ export default function OwnerManagement() {
       {/* PAGE HEADER */}
       <div className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <div className="mb-1 flex items-center gap-2">
-            <span className="h-2 w-2 rounded-full bg-[#8B4E2F]" />
-            <span className="text-xs font-semibold uppercase tracking-[0.12em] text-[#8B4E2F]">
-              Administration
-            </span>
-          </div>
-
           <h1 className="text-3xl font-bold tracking-tight text-[#171717]">
             Store Owner Management
           </h1>
