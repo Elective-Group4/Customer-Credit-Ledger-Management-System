@@ -4,10 +4,11 @@ export const productSchema = z.object({
   name: z.string().trim().min(1, "Product name is required."),
   idCode: z.string().trim().min(1, "ID code is required."),
   price: z.coerce.number().positive("Price must be greater than zero."),
+  image: z.any().nullable().optional(),
 })
 
 export const customerSchema = z.object({
-  customerCode: z.string().trim().min(1),
+  customerCode: z.string().trim().optional(),
   name: z.string().trim().min(1, "Customer name is required."),
   phoneNumber: z.string().trim().min(1, "Phone number is required."),
   address: z.string().trim().min(1, "Address is required."),

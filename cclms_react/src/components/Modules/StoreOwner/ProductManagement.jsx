@@ -1,7 +1,7 @@
-import { useMemo, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
-import { Pencil, Power, Plus, Search, Trash2 } from "lucide-react"
+import { ImagePlus, Pencil, Power, Plus, Search, Trash2 } from "lucide-react"
 import { toast } from "sonner"
 
 import { useOwnerProducts } from "@/hooks/use-owner-products"
@@ -29,10 +29,13 @@ export default function ProductManagement() {
 	const [editingProduct, setEditingProduct] = useState(null)
 	const [productToDelete, setProductToDelete] = useState(null)
 	const [saving, setSaving] = useState(false)
-	const { register, reset, handleSubmit, formState: { errors } } = useForm({
+	const [imagePreview, setImagePreview] = useState(null)
+	const { register, reset, setValue, handleSubmit, formState: { errors } } = useForm({
 		resolver: zodResolver(productSchema),
-		defaultValues: { name: "", idCode: "", price: "" },
+		defaultValues: { name: "", idCode: "", price: "", image: null },
 	})
+
+	useEffect(() => () => imagePreview && URL.revokeObjectURL(imagePreview), [imagePreview])
 	const filteredProducts = useMemo(() => {
 		const query = search.trim().toLowerCase()
 		if (!query) return products
@@ -41,14 +44,31 @@ export default function ProductManagement() {
 
 	function openAddDialog() {
 		setEditingProduct(null)
-		reset({ name: "", idCode: "", price: "" })
+		reset({ name: "", idCode: "", price: "", image: null })
+		setImagePreview(null)
 		setDialogOpen(true)
 	}
 
 	function openEditDialog(product) {
 		setEditingProduct(product)
-		reset({ name: product.name, idCode: product.idCode, price: product.price })
+		reset({ name: product.name, idCode: product.idCode, price: product.price, image: null })
+		setImagePreview(product.imageUrl || null)
 		setDialogOpen(true)
+	}
+
+	function handleImageChange(event) {
+		const file = event.target.files?.[0]
+		if (!file) return
+		if (!file.type.startsWith("image/")) {
+			toast.error("Please choose an image file.")
+			return
+		}
+		if (file.size > 5 * 1024 * 1024) {
+			toast.error("Product images must be 5 MB or smaller.")
+			return
+		}
+		setValue("image", file, { shouldDirty: true })
+		setImagePreview(URL.createObjectURL(file))
 	}
 
 	async function submitProduct(values) {
@@ -97,6 +117,7 @@ export default function ProductManagement() {
 	}
 
 	const columns = [
+		{ key: "image", header: "Image", cell: (row) => row.imageUrl ? <img src={row.imageUrl} alt="" className="size-10 rounded-md object-cover" /> : <div className="flex size-10 items-center justify-center rounded-md bg-muted text-muted-foreground"><ImagePlus className="size-4" /></div> },
 		{ key: "idCode", header: "ID Code" },
 		{ key: "name", header: "Name" },
 		{ key: "price", header: "Price", cell: (row) => formatPrice(row.price) },
@@ -105,12 +126,12 @@ export default function ProductManagement() {
 	]
 
 	return (
-		<main className="flex flex-1 flex-col gap-6 p-6">
-			<div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between"><div><h1 className="text-2xl font-semibold tracking-tight">Product Management</h1><p className="text-muted-foreground">Maintain the products available for credit entries.</p></div><Button onClick={openAddDialog}><Plus /> Add New Product</Button></div>
+		<main className="flex flex-1 flex-col gap-7 bg-[#FAFAF9] p-5 md:p-7 dark:bg-background">
+			<div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between"><div><h1 className="text-3xl font-bold tracking-tight text-[#171717] dark:text-foreground md:text-4xl">Product Management</h1><p className="text-muted-foreground">Maintain the products available for credit entries.</p></div><Button className="bg-[#8B4E2F] text-white hover:bg-[#713D24]" onClick={openAddDialog}><Plus /> Add New Product</Button></div>
 			<div className="relative max-w-md"><Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" /><Input className="pl-9" placeholder="Search products..." value={search} onChange={(event) => { setSearch(event.target.value); setPage(1) }} /></div>
-			<Card><CardHeader><CardTitle>Products</CardTitle><CardDescription>{filteredProducts.length} product{filteredProducts.length === 1 ? "" : "s"} found.</CardDescription></CardHeader><CardContent><DataTable columns={columns} rows={filteredProducts} rowKey={(row) => row.id} page={page} onPageChange={setPage} loading={loading} error={error} emptyMessage="No products found." /></CardContent></Card>
+			<Card className="border-stone-200 bg-white shadow-sm dark:border-border dark:bg-card"><CardHeader><CardTitle>Products</CardTitle><CardDescription>{filteredProducts.length} product{filteredProducts.length === 1 ? "" : "s"} found.</CardDescription></CardHeader><CardContent><DataTable columns={columns} rows={filteredProducts} rowKey={(row) => row.id} page={page} onPageChange={setPage} loading={loading} error={error} emptyMessage="No products found." /></CardContent></Card>
 
-			<Dialog open={dialogOpen} onOpenChange={setDialogOpen}><DialogContent><DialogHeader><DialogTitle>{editingProduct ? "Edit Product" : "Add New Product"}</DialogTitle><DialogDescription>{editingProduct ? "Update the product details." : "Add a product to the credit catalog."}</DialogDescription></DialogHeader><form className="grid gap-4" onSubmit={handleSubmit(submitProduct)}><div className="grid gap-2"><Label htmlFor="product-name">Name</Label><Input id="product-name" {...register("name")} />{errors.name && <p className="text-sm text-destructive">{errors.name.message}</p>}</div><div className="grid gap-2"><Label htmlFor="product-id-code">ID Code</Label><Input id="product-id-code" {...register("idCode")} />{errors.idCode && <p className="text-sm text-destructive">{errors.idCode.message}</p>}</div><div className="grid gap-2"><Label htmlFor="product-price">Price</Label><Input id="product-price" type="number" min="0.01" step="0.01" {...register("price")} />{errors.price && <p className="text-sm text-destructive">{errors.price.message}</p>}</div><DialogFooter><Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>Cancel</Button><Button type="submit" disabled={saving}>{saving ? "Saving..." : editingProduct ? "Save Changes" : "Add Product"}</Button></DialogFooter></form></DialogContent></Dialog>
+			<Dialog open={dialogOpen} onOpenChange={setDialogOpen}><DialogContent><DialogHeader><DialogTitle>{editingProduct ? "Edit Product" : "Add New Product"}</DialogTitle><DialogDescription>{editingProduct ? "Update the product details." : "Add a product to the credit catalog."}</DialogDescription></DialogHeader><form className="grid gap-4" onSubmit={handleSubmit(submitProduct)}><div className="grid gap-2"><Label htmlFor="product-image">Product image</Label><div className="flex items-center gap-3"><div className="flex size-20 shrink-0 items-center justify-center overflow-hidden rounded-md border bg-muted">{imagePreview ? <img src={imagePreview} alt="Product preview" className="size-full object-cover" /> : <ImagePlus className="size-6 text-muted-foreground" />}</div><div className="grid gap-1"><Input id="product-image" type="file" accept="image/png,image/jpeg,image/webp" className="max-w-xs" onChange={handleImageChange} /><p className="text-xs text-muted-foreground">PNG, JPG, or WebP up to 5 MB.</p></div></div></div><div className="grid gap-2"><Label htmlFor="product-name">Name</Label><Input id="product-name" {...register("name")} />{errors.name && <p className="text-sm text-destructive">{errors.name.message}</p>}</div><div className="grid gap-2"><Label htmlFor="product-id-code">ID Code</Label><Input id="product-id-code" {...register("idCode")} />{errors.idCode && <p className="text-sm text-destructive">{errors.idCode.message}</p>}</div><div className="grid gap-2"><Label htmlFor="product-price">Price</Label><Input id="product-price" type="number" min="0.01" step="0.01" {...register("price")} />{errors.price && <p className="text-sm text-destructive">{errors.price.message}</p>}</div><DialogFooter><Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>Cancel</Button><Button type="submit" disabled={saving}>{saving ? "Saving..." : editingProduct ? "Save Changes" : "Add Product"}</Button></DialogFooter></form></DialogContent></Dialog>
 
 			<AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}><AlertDialogContent><AlertDialogHeader><AlertDialogTitle>Delete product?</AlertDialogTitle><AlertDialogDescription>This will remove {productToDelete?.name || "this product"} from the catalog. Historical credit snapshots remain unchanged.</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction variant="destructive" onClick={deleteProduct} disabled={saving}>Delete</AlertDialogAction></AlertDialogFooter></AlertDialogContent></AlertDialog>
 		</main>

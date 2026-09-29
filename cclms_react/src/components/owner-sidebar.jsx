@@ -16,8 +16,8 @@ const teams = [{ name: "SARI-SARI", logo: Store, plan: "Store Owner" }]
 
 export function OwnerSidebar() {
   return (
-    <Sidebar collapsible="icon" className="w-64 border-r border-[#E5E7EB] bg-white">
-      <SidebarHeader className="h-20 border-b border-[#E5E7EB] px-5"><TeamSwitcher teams={teams} role="OWNER" /></SidebarHeader>
+    <Sidebar collapsible="icon" className="w-64 border-r border-sidebar-border bg-sidebar">
+      <SidebarHeader className="h-20 border-b border-sidebar-border px-5"><TeamSwitcher teams={teams} role="OWNER" /></SidebarHeader>
       <SidebarContent><OwnerNavMain items={navItems} /></SidebarContent>
       <SidebarFooter className="h-16"><OwnerNavUser /></SidebarFooter>
       <SidebarRail />

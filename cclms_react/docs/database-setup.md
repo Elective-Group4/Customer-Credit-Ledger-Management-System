@@ -71,6 +71,7 @@ Stores the owner's product catalog.
 - `id_code text not null`, unique within a store
 - `name text not null`
 - `price numeric(12,2) not null`, greater than zero
+- `image_url text null`, public URL for the product image
 - `status product_status not null default 'active'`
 - `created_at timestamptz not null default now()`
 - `updated_at timestamptz not null default now()`
@@ -269,6 +270,30 @@ $$;
 The ranking function should return `customer_code`, `name`, and `balance`, ordered by `balance desc`. The monthly function should return `month`, `credit`, and `payments`, grouped by month.
 
 ## Row Level Security
+
+### Product image storage
+
+Create a public Supabase Storage bucket named `product-images`, then add the image URL column:
+
+```sql
+alter table public.products add column if not exists image_url text;
+insert into storage.buckets (id, name, public)
+values ('product-images', 'product-images', true)
+on conflict (id) do update set public = true;
+```
+
+The frontend stores files under `{store_id}/{product_id}/...`. Allow authenticated owners to upload only inside their own store folder:
+
+```sql
+create policy "owners upload product images"
+on storage.objects for insert to authenticated
+with check (
+  bucket_id = 'product-images'
+  and (storage.foldername(name))[1] = public.current_owner_store_id()::text
+);
+```
+
+Public read access is provided by the bucket's `public = true` setting. The application validates image type and limits uploads to 5 MB.
 
 Enable RLS on every owner-owned table:
 

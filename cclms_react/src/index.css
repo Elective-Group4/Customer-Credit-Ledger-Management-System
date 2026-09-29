@@ -117,6 +117,55 @@
     --sidebar-ring: oklch(0.556 0 0);
 }
 
+  .toaster {
+    --normal-bg: #1E3A8A;
+    --normal-text: #FFFFFF;
+    --normal-border: #3B82F6;
+  }
+
+  .dark .toaster {
+    --normal-bg: #172554;
+    --normal-text: #F8FAFC;
+    --normal-border: #2563EB;
+  }
+
+  /* Admin pages still use a few legacy utility colors; keep them readable in dark mode. */
+  .dark .admin-theme-surface [class~="bg-white"] {
+    background-color: var(--card);
+  }
+
+  .dark .admin-theme-surface [class~="bg-stone-50"],
+  .dark .admin-theme-surface [class~="bg-stone-50/40"],
+  .dark .admin-theme-surface [class~="bg-stone-50/50"],
+  .dark .admin-theme-surface [class~="bg-stone-50/70"],
+  .dark .admin-theme-surface [class~="bg-stone-100"] {
+    background-color: var(--muted);
+  }
+
+  .dark .admin-theme-surface [class~="text-[#171717]"],
+  .dark .admin-theme-surface [class~="text-stone-900"],
+  .dark .admin-theme-surface [class~="text-stone-800"],
+  .dark .admin-theme-surface [class~="text-stone-700"] {
+    color: var(--foreground);
+  }
+
+  .dark .admin-theme-surface [class~="text-stone-600"],
+  .dark .admin-theme-surface [class~="text-stone-500"],
+  .dark .admin-theme-surface [class~="text-stone-400"] {
+    color: var(--muted-foreground);
+  }
+
+  .dark .admin-theme-surface [class~="border-stone-200"],
+  .dark .admin-theme-surface [class~="border-stone-100"] {
+    border-color: var(--border);
+  }
+
+  .dark .admin-theme-surface [class~="hover:bg-stone-50"]:hover,
+  .dark .admin-theme-surface [class~="hover:bg-stone-50/60"]:hover,
+  .dark .admin-theme-surface [class~="hover:bg-stone-50/70"]:hover {
+    background-color: var(--accent);
+  }
+
 @layer base {
   * {
     @apply border-border outline-ring/50;

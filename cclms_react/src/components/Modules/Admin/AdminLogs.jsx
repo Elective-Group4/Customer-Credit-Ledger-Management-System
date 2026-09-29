@@ -166,7 +166,7 @@ export default function AdminLogs() {
   }
 
   return (
-    <main className="flex flex-1 flex-col gap-6 bg-stone-50/40 p-6">
+    <main className="admin-theme-surface flex flex-1 flex-col gap-6 bg-background p-6">
 
       {/* PAGE HEADER */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">

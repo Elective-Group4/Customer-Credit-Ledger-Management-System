@@ -10,7 +10,7 @@ export function DataTable({ columns, rows, rowKey, page, pageSize = 10, onPageCh
       <div className="overflow-x-auto rounded-md border">
         <Table>
           <TableHeader>
-            <TableRow>
+            <TableRow className="bg-muted/50 hover:bg-muted/50">
               {columns.map((column) => <TableHead key={column.key}>{column.header}</TableHead>)}
             </TableRow>
           </TableHeader>
@@ -19,7 +19,7 @@ export function DataTable({ columns, rows, rowKey, page, pageSize = 10, onPageCh
             {!loading && error && <TableRow><TableCell colSpan={columns.length} className="h-24 text-center text-destructive">{error}</TableCell></TableRow>}
             {!loading && !error && visibleRows.length === 0 && <TableRow><TableCell colSpan={columns.length} className="h-24 text-center text-muted-foreground">{emptyMessage}</TableCell></TableRow>}
             {!loading && !error && visibleRows.map((row, index) => (
-              <TableRow key={rowKey(row)}>
+              <TableRow key={rowKey(row)} className="transition-colors hover:bg-muted/50">
                 {columns.map((column) => <TableCell key={column.key}>{column.cell ? column.cell(row, index) : row[column.key]}</TableCell>)}
               </TableRow>
             ))}

@@ -5,6 +5,7 @@ export function useOwnerCredits() {
   const [customers, setCustomers] = useState([])
   const [products, setProducts] = useState([])
   const [credits, setCredits] = useState([])
+  const [payments, setPayments] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
 
@@ -12,14 +13,16 @@ export function useOwnerCredits() {
     setLoading(true)
     setError("")
     try {
-      const [customerRows, productRows, creditRows] = await Promise.all([
+      const [customerRows, productRows, creditRows, paymentRows] = await Promise.all([
         ownerApi.listCustomers(),
         ownerApi.listProducts(),
         ownerApi.listCredits(),
+        ownerApi.listPayments(),
       ])
       setCustomers(customerRows)
       setProducts(productRows)
       setCredits(creditRows)
+      setPayments(paymentRows)
     } catch (loadError) {
       setError(loadError instanceof Error ? loadError.message : "Unable to load credit data.")
     } finally {
@@ -31,5 +34,5 @@ export function useOwnerCredits() {
     void Promise.resolve().then(refresh)
   }, [])
 
-  return { customers, products, credits, loading, error, refresh }
+  return { customers, products, credits, payments, loading, error, refresh }
 }

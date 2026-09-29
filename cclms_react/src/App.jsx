@@ -1,4 +1,5 @@
 import { lazy, Suspense, useEffect, useState } from "react"
+import { ThemeProvider } from "next-themes"
 
 import {
   BrowserRouter,
@@ -146,20 +147,12 @@ function OwnerRoute({ children }) {
 export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
+      <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false}>
+        <TooltipProvider>
 
       <BrowserRouter>
 
-        <Toaster
-          position="top-right"
-          toastOptions={{
-            style: {
-              background: "#0B1F3A",
-              color: "#FFFFFF",
-              border: "1px solid #163A5F",
-            },
-          }}
-        />
+        <Toaster position="top-right" />
 
         <Routes>
 
@@ -249,7 +242,8 @@ export default function App() {
 
       </BrowserRouter>
 
-      </TooltipProvider>
+        </TooltipProvider>
+      </ThemeProvider>
     </QueryClientProvider>
   )
 }

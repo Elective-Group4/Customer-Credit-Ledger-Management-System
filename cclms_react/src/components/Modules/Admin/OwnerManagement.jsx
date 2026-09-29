@@ -628,7 +628,7 @@ export default function OwnerManagement() {
   // =====================================================
 
   return (
-    <div className="flex min-h-full flex-col gap-6 bg-[#FAFAF9] p-5 md:p-7">
+    <div className="admin-theme-surface flex min-h-full flex-col gap-6 bg-background p-5 md:p-7">
 
       {/* PAGE HEADER */}
       <div className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
@@ -901,8 +901,8 @@ export default function OwnerManagement() {
       {/* ADD / EDIT DIALOG */}
       {/* ================================================= */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="overflow-hidden rounded-2xl border-stone-200 p-0 shadow-xl sm:max-w-[560px]">
-          <DialogHeader className="border-b border-stone-100 bg-stone-50/70 px-6 py-5">
+        <DialogContent className="overflow-hidden rounded-2xl border-stone-200 bg-background p-0 shadow-xl dark:border-border dark:bg-card sm:max-w-[560px]">
+          <DialogHeader className="border-b border-stone-100 bg-stone-50/70 px-6 py-5 dark:border-border dark:bg-muted/40">
             <div className="flex items-center gap-3">
               <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#F5EEE9] text-[#8B4E2F]">
                 {editingOwner ? (
@@ -912,7 +912,7 @@ export default function OwnerManagement() {
                 )}
               </div>
               <div>
-                <DialogTitle className="text-lg text-[#171717]">
+                <DialogTitle className="text-lg text-[#171717] dark:text-foreground">
                   {editingOwner ? "Edit Store Owner" : "Add Store Owner"}
                 </DialogTitle>
                 <DialogDescription className="mt-1">
@@ -932,7 +932,7 @@ export default function OwnerManagement() {
                 value={form.full_name}
                 onChange={(event) => handleChange("full_name", event.target.value)}
                 placeholder="Juan Dela Cruz"
-                className="h-10 border-stone-200 focus-visible:ring-[#8B4E2F]/30"
+                className="h-10 border-stone-200 focus-visible:ring-[#8B4E2F]/30 dark:border-border dark:bg-background"
               />
             </div>
 
@@ -945,7 +945,7 @@ export default function OwnerManagement() {
                 disabled={!!editingOwner}
                 onChange={(event) => handleChange("email", event.target.value)}
                 placeholder="juan@example.com"
-                className="h-10 border-stone-200 focus-visible:ring-[#8B4E2F]/30"
+                className="h-10 border-stone-200 focus-visible:ring-[#8B4E2F]/30 dark:border-border dark:bg-background"
               />
               {editingOwner && (
                 <p className="text-xs leading-relaxed text-muted-foreground">
@@ -963,7 +963,7 @@ export default function OwnerManagement() {
                   value={form.password}
                   onChange={(event) => handleChange("password", event.target.value)}
                   placeholder="Enter password"
-                  className="h-10 border-stone-200 focus-visible:ring-[#8B4E2F]/30"
+                  className="h-10 border-stone-200 focus-visible:ring-[#8B4E2F]/30 dark:border-border dark:bg-background"
                 />
                 <p className="text-xs text-muted-foreground">Minimum 6 characters.</p>
               </div>
@@ -977,7 +977,7 @@ export default function OwnerManagement() {
                   value={form.phone_number}
                   onChange={(event) => handleChange("phone_number", event.target.value)}
                   placeholder="09171234567"
-                  className="h-10 border-stone-200 focus-visible:ring-[#8B4E2F]/30"
+                  className="h-10 border-stone-200 focus-visible:ring-[#8B4E2F]/30 dark:border-border dark:bg-background"
                 />
               </div>
 
@@ -988,7 +988,7 @@ export default function OwnerManagement() {
                   value={form.store_name}
                   onChange={(event) => handleChange("store_name", event.target.value)}
                   placeholder="Juan Sari-Sari Store"
-                  className="h-10 border-stone-200 focus-visible:ring-[#8B4E2F]/30"
+                  className="h-10 border-stone-200 focus-visible:ring-[#8B4E2F]/30 dark:border-border dark:bg-background"
                 />
               </div>
             </div>
@@ -1011,7 +1011,7 @@ export default function OwnerManagement() {
                   value={form.status}
                   onValueChange={(value) => handleChange("status", value)}
                 >
-                  <SelectTrigger className="h-10 border-stone-200 focus:ring-[#8B4E2F]/30">
+                  <SelectTrigger className="h-10 border-stone-200 focus:ring-[#8B4E2F]/30 dark:border-border dark:bg-background">
                     <SelectValue placeholder="Select status" />
                   </SelectTrigger>
                   <SelectContent>
@@ -1023,12 +1023,12 @@ export default function OwnerManagement() {
             </div>
           </div>
 
-          <DialogFooter className="border-t border-stone-100 bg-stone-50/50 px-6 pt-4 pb-8">
+          <DialogFooter className="border-t border-stone-100 bg-stone-50/50 px-6 pt-4 pb-8 dark:border-border dark:bg-muted/40">
             <Button
               variant="outline"
               onClick={() => setDialogOpen(false)}
               disabled={saving}
-              className="border-stone-200 bg-white"
+              className="border-stone-200 bg-white dark:border-border dark:bg-background"
             >
               Cancel
             </Button>
@@ -1050,9 +1050,9 @@ export default function OwnerManagement() {
       {/* VIEW OWNER */}
       {/* ================================================= */}
       <Dialog open={viewDialogOpen} onOpenChange={setViewDialogOpen}>
-        <DialogContent className="overflow-hidden rounded-2xl border-stone-200 p-0 shadow-xl sm:max-w-[520px]">
-          <DialogHeader className="border-b border-stone-100 bg-stone-50/70 px-6 py-5">
-            <DialogTitle className="text-lg text-[#171717]">
+        <DialogContent className="overflow-hidden rounded-2xl border-stone-200 bg-background p-0 shadow-xl dark:border-border dark:bg-card sm:max-w-[520px]">
+          <DialogHeader className="border-b border-stone-100 bg-stone-50/70 px-6 py-5 dark:border-border dark:bg-muted/40">
+            <DialogTitle className="text-lg text-[#171717] dark:text-foreground">
               Store Owner Details
             </DialogTitle>
             <DialogDescription>
@@ -1062,12 +1062,12 @@ export default function OwnerManagement() {
 
           {selectedOwner && (
             <div className="px-6 py-6">
-              <div className="overflow-hidden rounded-2xl border border-stone-200 bg-white shadow-sm">
+              <div className="overflow-hidden rounded-2xl border border-stone-200 bg-white shadow-sm dark:border-border dark:bg-card">
                 <div className="h-20 bg-[#8B4E2F]" />
 
                 <div className="relative px-6 pb-6">
                   <div className="-mt-10 flex items-end justify-between">
-                    <div className="flex h-20 w-20 items-center justify-center rounded-2xl border-4 border-white bg-[#F5EEE9] text-2xl font-bold text-[#8B4E2F] shadow-sm">
+                    <div className="flex h-20 w-20 items-center justify-center rounded-2xl border-4 border-white bg-[#F5EEE9] text-2xl font-bold text-[#8B4E2F] shadow-sm dark:border-card dark:bg-[#8B4E2F]/20 dark:text-[#D9A66A]">
                       {selectedOwner.profiles?.full_name?.charAt(0).toUpperCase() || "?"}
                     </div>
 
@@ -1090,7 +1090,7 @@ export default function OwnerManagement() {
                   </div>
 
                   <div className="mt-4 border-b border-stone-100 pb-5">
-                    <h3 className="text-xl font-bold tracking-tight text-[#171717]">
+                    <h3 className="text-xl font-bold tracking-tight text-[#171717] dark:text-foreground">
                       {selectedOwner.profiles?.full_name || "Unknown Owner"}
                     </h3>
                     <p className="mt-1 text-sm text-muted-foreground">
@@ -1103,7 +1103,7 @@ export default function OwnerManagement() {
                       <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
                         Email Address
                       </p>
-                      <p className="mt-1 break-all text-sm font-medium text-[#171717]">
+                      <p className="mt-1 break-all text-sm font-medium text-[#171717] dark:text-foreground">
                         {selectedOwner.profiles?.email || "-"}
                       </p>
                     </div>
@@ -1112,7 +1112,7 @@ export default function OwnerManagement() {
                       <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
                         Phone Number
                       </p>
-                      <p className="mt-1 text-sm font-medium text-[#171717]">
+                      <p className="mt-1 text-sm font-medium text-[#171717] dark:text-foreground">
                         {selectedOwner.profiles?.phone_number || "-"}
                       </p>
                     </div>
@@ -1121,7 +1121,7 @@ export default function OwnerManagement() {
                       <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
                         Branch Assignment
                       </p>
-                      <p className="mt-1 text-sm font-medium text-[#171717]">
+                      <p className="mt-1 text-sm font-medium text-[#171717] dark:text-foreground">
                         {selectedOwner.branch || "-"}
                       </p>
                     </div>
@@ -1130,7 +1130,7 @@ export default function OwnerManagement() {
                       <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
                         Date Issued
                       </p>
-                      <p className="mt-1 text-sm font-medium text-[#171717]">
+                      <p className="mt-1 text-sm font-medium text-[#171717] dark:text-foreground">
                         {selectedOwner.created_at
                           ? new Date(selectedOwner.created_at).toLocaleDateString()
                           : "-"}

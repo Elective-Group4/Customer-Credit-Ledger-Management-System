@@ -25,6 +25,8 @@ function LoginForm({ className, ...props }) {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [rememberMe, setRememberMe] = useState(() => Boolean(localStorage.getItem("cclms.rememberedEmail")));
+  const rememberedEmail = localStorage.getItem("cclms.rememberedEmail") || "";
 
   const navigate = useNavigate();
 
@@ -36,6 +38,12 @@ function LoginForm({ className, ...props }) {
   const formData = new FormData(event.currentTarget);
   const email = formData.get("email");
   const password = formData.get("password");
+
+  if (rememberMe) {
+    localStorage.setItem("cclms.rememberedEmail", email);
+  } else {
+    localStorage.removeItem("cclms.rememberedEmail");
+  }
 
   // Login with Supabase Auth
   const { data, error: loginError } =
@@ -187,6 +195,7 @@ function LoginForm({ className, ...props }) {
               name="email"
               type="email"
               placeholder="user@gmail.com"
+              defaultValue={rememberedEmail}
               required
               autoComplete="email"
               className="
@@ -293,6 +302,8 @@ function LoginForm({ className, ...props }) {
                 type="checkbox"
                 id="rememberMe"
                 name="rememberMe"
+                checked={rememberMe}
+                onChange={(event) => setRememberMe(event.target.checked)}
                 className="
                   h-4
                   w-4

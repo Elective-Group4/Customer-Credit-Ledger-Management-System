@@ -215,7 +215,7 @@ export default function AdminDashboard() {
 
 
   return (
-    <div className="flex flex-1 flex-col gap-7 bg-[#FAFAF9] p-5 md:p-7">
+    <div className="admin-theme-surface flex flex-1 flex-col gap-7 bg-background p-5 md:p-7">
 
 
       {/* ==============================

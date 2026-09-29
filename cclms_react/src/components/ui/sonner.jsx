@@ -7,11 +7,11 @@ import { CircleCheckIcon, InfoIcon, TriangleAlertIcon, OctagonXIcon, Loader2Icon
 const Toaster = ({
   ...props
 }) => {
-  const { theme = "system" } = useTheme()
+  const { resolvedTheme = "light" } = useTheme()
 
   return (
     <Sonner
-      theme={theme}
+      theme={resolvedTheme}
       className="toaster group"
       icons={{
         success: (
@@ -32,9 +32,6 @@ const Toaster = ({
       }}
       style={
         {
-          "--normal-bg": "var(--popover)",
-          "--normal-text": "var(--popover-foreground)",
-          "--normal-border": "var(--border)",
           "--border-radius": "var(--radius)"
         }
       }

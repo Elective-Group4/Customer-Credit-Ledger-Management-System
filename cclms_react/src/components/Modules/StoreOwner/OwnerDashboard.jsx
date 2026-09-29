@@ -23,10 +23,10 @@ const rankingColumns = [
 
 function StatCard({ title, value, description, icon: Icon }) {
 	return (
-		<Card>
+		<Card className="border-stone-200 bg-white shadow-sm transition-shadow hover:shadow-md dark:border-border dark:bg-card">
 			<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-				<CardTitle className="text-sm font-medium">{title}</CardTitle>
-				<Icon className="size-5 text-muted-foreground" />
+				<CardTitle className="text-sm font-medium text-stone-600 dark:text-muted-foreground">{title}</CardTitle>
+				<div className="flex size-10 items-center justify-center rounded-xl bg-[#F5EEE9] text-[#8B4E2F] dark:bg-[#8B4E2F]/20 dark:text-[#D9A66A]"><Icon className="size-5" /></div>
 			</CardHeader>
 			<CardContent>
 				<div className="text-2xl font-semibold">{value}</div>
@@ -49,13 +49,13 @@ export default function OwnerDashboard() {
 		: []
 
 	return (
-		<main className="flex flex-1 flex-col gap-6 p-6">
+		<main className="flex flex-1 flex-col gap-7 bg-[#FAFAF9] p-5 md:p-7 dark:bg-background">
 			<div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
 				<div>
-					<h1 className="text-2xl font-semibold tracking-tight">Owner Dashboard</h1>
+					<h1 className="text-3xl font-bold tracking-tight text-[#171717] dark:text-foreground md:text-4xl">Owner Dashboard</h1>
 					<p className="text-muted-foreground">A current view of customers, credit, and payments.</p>
 				</div>
-				<Button variant="outline" onClick={refresh} disabled={loading}>{loading ? "Refreshing..." : "Refresh"}</Button>
+				<Button variant="outline" className="border-stone-200 bg-white shadow-sm dark:border-border dark:bg-card" onClick={refresh} disabled={loading}>{loading ? "Refreshing..." : "Refresh"}</Button>
 			</div>
 
 			{error && <Card className="border-destructive"><CardContent className="pt-6 text-sm text-destructive">{error}</CardContent></Card>}
@@ -68,7 +68,7 @@ export default function OwnerDashboard() {
 			</div>
 
 			<div className="grid gap-6 lg:grid-cols-2">
-				<Card>
+				<Card className="border-stone-200 bg-white shadow-sm dark:border-border dark:bg-card">
 					<CardHeader><CardTitle>Customer Status</CardTitle><CardDescription>Active and inactive customer accounts.</CardDescription></CardHeader>
 					<CardContent>
 						{customerStatus.some((item) => item.value > 0) ? (
@@ -79,7 +79,7 @@ export default function OwnerDashboard() {
 					</CardContent>
 				</Card>
 
-				<Card>
+				<Card className="border-stone-200 bg-white shadow-sm dark:border-border dark:bg-card">
 					<CardHeader><CardTitle>Credit by Month</CardTitle><CardDescription>Credit entries and recorded payments.</CardDescription></CardHeader>
 					<CardContent>
 						{data?.monthlyCredit?.length ? (
@@ -91,7 +91,7 @@ export default function OwnerDashboard() {
 				</Card>
 			</div>
 
-			<Card>
+			<Card className="border-stone-200 bg-white shadow-sm dark:border-border dark:bg-card">
 				<CardHeader><CardTitle>Credit Ranking</CardTitle><CardDescription>Customers with the highest outstanding balances.</CardDescription></CardHeader>
 				<CardContent><DataTable columns={rankingColumns} rows={ranking} rowKey={(row) => row.id} page={page} onPageChange={setPage} loading={loading} error={error} emptyMessage="No outstanding credit found." /></CardContent>
 			</Card>

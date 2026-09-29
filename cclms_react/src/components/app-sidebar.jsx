@@ -67,7 +67,7 @@ export function AppSidebar({ ...props }) {
     <Sidebar
       collapsible="icon"
       {...props}
-      className="w-64 border-r border-[#E5E7EB] bg-white"
+      className="w-64 border-r border-sidebar-border bg-sidebar"
     >
       <SidebarHeader className="h-20 border-b border-[#E5E7EB] px-5">
         <TeamSwitcher teams={data.teams} role="ADMIN" />
