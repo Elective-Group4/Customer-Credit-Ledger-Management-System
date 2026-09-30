@@ -4,7 +4,6 @@ let products = []
 let customers = []
 let creditEntries = []
 let payments = []
-let nextCustomerNumber = 123
 
 function createId(prefix) {
   const value = globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random()}`
@@ -26,9 +25,8 @@ function withCustomerBalance(customer) {
 }
 
 function createCustomerCode() {
-  const code = `CUST-${String(nextCustomerNumber).padStart(6, "0")}`
-  nextCustomerNumber += 1
-  return code
+  const value = globalThis.crypto?.randomUUID?.().replaceAll("-", "").slice(0, 6) || Math.random().toString(36).slice(2, 8)
+  return `CUST-${value.toUpperCase()}`
 }
 
 export const mockOwnerData = {
@@ -58,7 +56,6 @@ export const mockOwnerData = {
     return products.find((product) => product.id === id)
   },
   getCustomers: async () => customers.map(withCustomerBalance),
-  getNextCustomerCode: async () => createCustomerCode(),
   createCustomer: async (input) => {
     const customerCode = input.customerCode || createCustomerCode()
     if (customers.some((customer) => customer.customerCode === customerCode)) {

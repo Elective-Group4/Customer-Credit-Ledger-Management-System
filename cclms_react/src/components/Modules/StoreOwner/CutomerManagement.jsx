@@ -35,15 +35,17 @@ export default function CustomerManagement() {
 		return customers.filter((customer) => customer.customerCode.toLowerCase().includes(query) || customer.name.toLowerCase().includes(query) || customer.address.toLowerCase().includes(query))
 	}, [customers, search])
 
-	async function openAddDialog() {
-		try {
-			const customerCode = await ownerApi.nextCustomerCode()
-			setEditingCustomer(null)
-			reset({ customerCode: customerCode || "", name: "", phoneNumber: "", address: "" })
-			setDialogOpen(true)
-		} catch (codeError) {
-			toast.error("Unable to generate customer ID", { description: codeError instanceof Error ? codeError.message : "Please try again." })
-		}
+	function openAddDialog() {
+		setEditingCustomer(null)
+
+		reset({
+			customerCode: "",
+			name: "",
+			phoneNumber: "",
+			address: "",
+		})
+
+		setDialogOpen(true)
 	}
 
 	function openEditDialog(customer) {

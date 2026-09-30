@@ -141,7 +141,7 @@ The current system does not use separate `stores`, `transactions`, or `transacti
 customer credit total - customer payment total = current balance
 ```
 
-Customer codes are database-generated in the format `CUST-000123`. React does not insert the final customer code.
+Customer codes are database-generated in the format `CUST-XXXXXX` using a PostgreSQL default function and a unique constraint. React does not insert or preview the final customer code.
 
 ## 6. Owner Data Flow
 
@@ -162,7 +162,6 @@ These methods query the `products` table and respect RLS.
 `CutomerManagement.jsx` uses `use-owner-customers.js`, which calls:
 
 - `ownerApi.listCustomers()` from `owner_customer_balances`
-- `ownerApi.nextCustomerCode()` for an optional preview only
 - `ownerApi.createCustomer()` without inserting `customer_code`
 - `ownerApi.updateCustomer()`
 - `ownerApi.deleteCustomer()`

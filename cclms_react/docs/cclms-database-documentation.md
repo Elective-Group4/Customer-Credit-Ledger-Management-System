@@ -494,19 +494,11 @@ Last update timestamp
 
 10. Customer Codes
 
-Customer codes use the format:
+Customer codes use the format `CUST-XXXXXX`.
 
-CUST-000123
+PostgreSQL generates the final code with `public.generate_customer_code()` as the column default. A global unique constraint protects the value, and the React application does not preview, increment, or insert customer codes.
 
-The database uses a sequence for generating customer numbers.
-
-The important principle is:
-
-The database should generate the actual customer code.
-
-The React application may display a preview of the next code, but the final inserted record should allow the database default to generate the code.
-
-This avoids relying on frontend-generated IDs.
+See `docs/customer-management-supabase.sql` for the idempotent migration and RLS verification queries.
 
 11. Credit Entries
 
