@@ -1,4 +1,4 @@
-import { supabase } from "@/lib/supabase"
+import { supabase } from "@/lib/supabase";
 
 // =========================================================
 // GET CURRENT OWNER STORE ID
@@ -8,43 +8,41 @@ async function getCurrentStoreId() {
   const {
     data: { user },
     error: userError,
-  } = await supabase.auth.getUser()
+  } = await supabase.auth.getUser();
 
-  
   if (userError) {
-    throw userError
+    throw userError;
   }
 
   if (!user) {
-    throw new Error("You are not logged in.")
+    throw new Error("You are not logged in.");
   }
 
   const { data, error } = await supabase
     .from("store_owners")
     .select("id")
     .eq("profile_id", user.id)
-    .single()
+    .single();
 
   if (error) {
-    throw error
+    throw error;
   }
 
-  return data.id
-
+  return data.id;
 }
 
 async function uploadProductImage(productId, file) {
-  const storeId = await getCurrentStoreId()
-  const extension = file.name.split(".").pop()?.toLowerCase() || "jpg"
-  const path = `${storeId}/${productId}/${crypto.randomUUID()}.${extension}`
+  const storeId = await getCurrentStoreId();
+  const extension = file.name.split(".").pop()?.toLowerCase() || "jpg";
+  const path = `${storeId}/${productId}/${crypto.randomUUID()}.${extension}`;
   const { error } = await supabase.storage
     .from("product-images")
-    .upload(path, file, { contentType: file.type, upsert: false })
+    .upload(path, file, { contentType: file.type, upsert: false });
 
-  if (error) throw error
+  if (error) throw error;
 
-  const { data } = supabase.storage.from("product-images").getPublicUrl(path)
-  return data.publicUrl
+  const { data } = supabase.storage.from("product-images").getPublicUrl(path);
+  return data.publicUrl;
 }
 
 // =========================================================
@@ -61,7 +59,7 @@ function mapProduct(product) {
     status: product.status,
     createdAt: product.created_at,
     updatedAt: product.updated_at,
-  }
+  };
 }
 
 // =========================================================
@@ -79,7 +77,7 @@ function mapCustomer(customer) {
     balance: Number(customer.balance ?? 0),
     createdAt: customer.created_at,
     updatedAt: customer.updated_at,
-  }
+  };
 }
 
 // =========================================================
@@ -93,7 +91,7 @@ function mapPayment(payment) {
     amount: Number(payment.amount),
     paymentType: payment.payment_type,
     createdAt: payment.created_at,
-  }
+  };
 }
 
 function mapCredit(entry) {
@@ -113,7 +111,7 @@ function mapCredit(entry) {
       unitPrice: Number(item.unit_price),
       subtotal: Number(item.subtotal),
     })),
-  }
+  };
 }
 
 // =========================================================
@@ -133,17 +131,17 @@ export const ownerApi = {
     const { data, error } = await supabase
       .from("products")
       .select("*")
-      .order("name", { ascending: true })
+      .order("name", { ascending: true });
 
     if (error) {
-      throw error
+      throw error;
     }
 
-    return (data ?? []).map(mapProduct)
+    return (data ?? []).map(mapProduct);
   },
 
   async createProduct(input) {
-    const storeId = await getCurrentStoreId()
+    const storeId = await getCurrentStoreId();
 
     const { data, error } = await supabase
       .from("products")
@@ -155,26 +153,26 @@ export const ownerApi = {
         status: "active",
       })
       .select("*")
-      .single()
+      .single();
 
     if (error) {
-      throw error
+      throw error;
     }
 
     if (input.image) {
-      const imageUrl = await uploadProductImage(data.id, input.image)
+      const imageUrl = await uploadProductImage(data.id, input.image);
       const { data: updatedProduct, error: imageError } = await supabase
         .from("products")
         .update({ image_url: imageUrl, updated_at: new Date().toISOString() })
         .eq("id", data.id)
         .select("*")
-        .single()
+        .single();
 
-      if (imageError) throw imageError
-      return mapProduct(updatedProduct)
+      if (imageError) throw imageError;
+      return mapProduct(updatedProduct);
     }
 
-    return mapProduct(data)
+    return mapProduct(data);
   },
 
   async updateProduct(id, input) {
@@ -188,34 +186,31 @@ export const ownerApi = {
       })
       .eq("id", id)
       .select("*")
-      .single()
+      .single();
 
     if (error) {
-      throw error
+      throw error;
     }
 
-    if (!input.image) return mapProduct(data)
+    if (!input.image) return mapProduct(data);
 
-    const imageUrl = await uploadProductImage(id, input.image)
+    const imageUrl = await uploadProductImage(id, input.image);
     const { data: updatedProduct, error: imageError } = await supabase
       .from("products")
       .update({ image_url: imageUrl, updated_at: new Date().toISOString() })
       .eq("id", id)
       .select("*")
-      .single()
+      .single();
 
-    if (imageError) throw imageError
-    return mapProduct(updatedProduct)
+    if (imageError) throw imageError;
+    return mapProduct(updatedProduct);
   },
 
   async deleteProduct(id) {
-    const { error } = await supabase
-      .from("products")
-      .delete()
-      .eq("id", id)
+    const { error } = await supabase.from("products").delete().eq("id", id);
 
     if (error) {
-      throw error
+      throw error;
     }
   },
 
@@ -224,16 +219,13 @@ export const ownerApi = {
       .from("products")
       .select("status")
       .eq("id", id)
-      .single()
+      .single();
 
     if (fetchError) {
-      throw fetchError
+      throw fetchError;
     }
 
-    const newStatus =
-      product.status === "active"
-        ? "inactive"
-        : "active"
+    const newStatus = product.status === "active" ? "inactive" : "active";
 
     const { data, error } = await supabase
       .from("products")
@@ -243,13 +235,13 @@ export const ownerApi = {
       })
       .eq("id", id)
       .select("*")
-      .single()
+      .single();
 
     if (error) {
-      throw error
+      throw error;
     }
 
-    return mapProduct(data)
+    return mapProduct(data);
   },
 
   // =======================================================
@@ -260,26 +252,23 @@ export const ownerApi = {
     const { data, error } = await supabase
       .from("owner_customer_balances")
       .select("*")
-      .order("name", { ascending: true })
+      .order("name", { ascending: true });
 
     if (error) {
-      throw error
+      throw error;
     }
 
-    return (data ?? []).map(mapCustomer)
+    return (data ?? []).map(mapCustomer);
   },
-  
+
   // -------------------------------------------------------
   // Create customer
   // -------------------------------------------------------
 
   async createCustomer(input) {
-    const storeId = await getCurrentStoreId()
+    const storeId = await getCurrentStoreId();
 
-    const {
-      data,
-      error,
-    } = await supabase
+    const { data, error } = await supabase
       .from("customers")
       .insert({
         store_id: storeId,
@@ -289,33 +278,27 @@ export const ownerApi = {
         status: "active",
       })
       .select("id, customer_code")
-      .single()
+      .single();
 
     if (error) {
-      console.error("CUSTOMER INSERT ERROR:", error)
-      throw error
+      console.error("CUSTOMER INSERT ERROR:", error);
+      throw error;
     }
 
-    console.log("CUSTOMER CREATED:", data)
+    console.log("CUSTOMER CREATED:", data);
 
-    const {
-      data: customer,
-      error: customerError,
-    } = await supabase
+    const { data: customer, error: customerError } = await supabase
       .from("owner_customer_balances")
       .select("*")
       .eq("id", data.id)
-      .single()
+      .single();
 
     if (customerError) {
-      console.error(
-        "CUSTOMER BALANCE VIEW ERROR:",
-        customerError
-      )
-      throw customerError
+      console.error("CUSTOMER BALANCE VIEW ERROR:", customerError);
+      throw customerError;
     }
 
-    return mapCustomer(customer)
+    return mapCustomer(customer);
   },
 
   // -------------------------------------------------------
@@ -331,27 +314,24 @@ export const ownerApi = {
         address: input.address || null,
         updated_at: new Date().toISOString(),
       })
-      .eq("id", id)
+      .eq("id", id);
 
     if (error) {
-      throw error
+      throw error;
     }
 
     // Fetch updated customer including current balance.
-    const {
-      data: customer,
-      error: customerError,
-    } = await supabase
+    const { data: customer, error: customerError } = await supabase
       .from("owner_customer_balances")
       .select("*")
       .eq("id", id)
-      .single()
+      .single();
 
     if (customerError) {
-      throw customerError
+      throw customerError;
     }
 
-    return mapCustomer(customer)
+    return mapCustomer(customer);
   },
 
   // -------------------------------------------------------
@@ -359,13 +339,10 @@ export const ownerApi = {
   // -------------------------------------------------------
 
   async deleteCustomer(id) {
-    const { error } = await supabase
-      .from("customers")
-      .delete()
-      .eq("id", id)
+    const { error } = await supabase.from("customers").delete().eq("id", id);
 
     if (error) {
-      throw error
+      throw error;
     }
   },
 
@@ -376,7 +353,8 @@ export const ownerApi = {
   async listCredits() {
     const { data, error } = await supabase
       .from("credit_entries")
-      .select(`
+      .select(
+        `
         *,
         customer:customers (
           name,
@@ -390,16 +368,17 @@ export const ownerApi = {
           unit_price,
           subtotal
         )
-      `)
+      `,
+      )
       .order("created_at", {
         ascending: false,
-      })
+      });
 
     if (error) {
-      throw error
+      throw error;
     }
 
-    return (data ?? []).map(mapCredit)
+    return (data ?? []).map(mapCredit);
   },
 
   // -------------------------------------------------------
@@ -407,21 +386,18 @@ export const ownerApi = {
   // -------------------------------------------------------
 
   async createCredit(input) {
-    const { data, error } = await supabase.rpc(
-      "create_credit_entry",
-      {
-        p_customer_id: input.customerId,
-        p_product_id: input.productId,
-        p_quantity: input.quantity,
-        p_due_date: input.dueDate || null,
-      }
-    )
+    const { data, error } = await supabase.rpc("create_credit_entry", {
+      p_customer_id: input.customerId,
+      p_product_id: input.productId,
+      p_quantity: input.quantity,
+      p_due_date: input.dueDate || null,
+    });
 
     if (error) {
-      throw error
+      throw error;
     }
 
-    return data
+    return data;
   },
 
   // =======================================================
@@ -429,20 +405,17 @@ export const ownerApi = {
   // =======================================================
 
   async createPayment(input) {
-    const { data, error } = await supabase.rpc(
-      "create_payment",
-      {
-        p_customer_id: input.customerId,
-        p_amount: input.amount,
-        p_payment_type: input.paymentType,
-      }
-    )
+    const { data, error } = await supabase.rpc("create_payment", {
+      p_customer_id: input.customerId,
+      p_amount: input.amount,
+      p_payment_type: input.paymentType,
+    });
 
     if (error) {
-      throw error
+      throw error;
     }
 
-    return data
+    return data;
   },
 
   async listPayments() {
@@ -451,13 +424,13 @@ export const ownerApi = {
       .select("*")
       .order("created_at", {
         ascending: false,
-      })
+      });
 
     if (error) {
-      throw error
+      throw error;
     }
 
-    return (data ?? []).map(mapPayment)
+    return (data ?? []).map(mapPayment);
   },
 
   // =======================================================
@@ -465,53 +438,57 @@ export const ownerApi = {
   // =======================================================
 
   async getDashboard() {
-    const [
-      totalsResult,
-      rankingResult,
-      monthlyResult,
-    ] = await Promise.all([
+    const [totalsResult, rankingResult, monthlyResult] = await Promise.all([
       supabase.rpc("owner_dashboard_totals"),
 
       supabase.rpc("owner_credit_ranking"),
 
       supabase.rpc("owner_monthly_credit_summary"),
-    ])
+    ]);
 
     if (totalsResult.error) {
-      throw totalsResult.error
+      throw totalsResult.error;
     }
 
     if (rankingResult.error) {
-      throw rankingResult.error
+      throw rankingResult.error;
     }
 
     if (monthlyResult.error) {
-      throw monthlyResult.error
+      throw monthlyResult.error;
     }
 
-    const totals = totalsResult.data?.[0] ?? {}
+    const totals = totalsResult.data?.[0] ?? {};
     const ranking = (rankingResult.data ?? []).map((row) => ({
       id: row.id ?? row.customer_id ?? row.customer_code,
       customerCode: row.customer_code,
       name: row.name ?? row.customer_name,
       balance: Number(row.balance ?? row.credit_balance ?? 0),
-    }))
+    }));
     const monthlyCredit = (monthlyResult.data ?? []).map((row) => ({
       month: row.month ?? row.month_label,
       credit: Number(row.credit ?? row.total_credit ?? 0),
       payments: Number(row.payments ?? row.total_payments ?? 0),
-    }))
+    }));
 
     return {
       totals: {
-        totalCustomers: Number(totals.total_customers ?? totals.totalCustomers ?? 0),
-        overallBalance: Number(totals.overall_balance ?? totals.overallBalance ?? 0),
-        activeCustomers: Number(totals.active_customers ?? totals.activeCustomers ?? 0),
-        customersDueThisMonth: Number(totals.customers_due_this_month ?? totals.customersDueThisMonth ?? 0),
+        totalCustomers: Number(
+          totals.total_customers ?? totals.totalCustomers ?? 0,
+        ),
+        overallBalance: Number(
+          totals.overall_balance ?? totals.overallBalance ?? 0,
+        ),
+        activeCustomers: Number(
+          totals.active_customers ?? totals.activeCustomers ?? 0,
+        ),
+        customersDueThisMonth: Number(
+          totals.customers_due_this_month ?? totals.customersDueThisMonth ?? 0,
+        ),
       },
       ranking,
       monthlyCredit,
-    }
+    };
   },
 
   // =======================================================
@@ -521,7 +498,8 @@ export const ownerApi = {
   async listTransactions() {
     const { data, error } = await supabase
       .from("credit_entries")
-      .select(`
+      .select(
+        `
         *,
         customer:customers (
           name,
@@ -535,21 +513,24 @@ export const ownerApi = {
           unit_price,
           subtotal
         )
-      `)
+      `,
+      )
       .order("created_at", {
         ascending: false,
-      })
+      });
 
     if (error) {
-      throw error
+      throw error;
     }
 
     return (data ?? []).map((entry) => ({
       id: entry.id,
       customerId: entry.customer_id,
       customerName: entry.customer?.name ?? entry.customer_id,
-      products: (entry.credit_entry_items ?? []).map((item) => item.product_name).join(", "),
+      products: (entry.credit_entry_items ?? [])
+        .map((item) => item.product_name)
+        .join(", "),
       createdAt: entry.created_at,
-    }))
+    }));
   },
-}
+};

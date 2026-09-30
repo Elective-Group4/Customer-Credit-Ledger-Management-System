@@ -27,26 +27,26 @@ The current Admin features already use these tables:
 
 ### `profiles`
 
-| Column | Type | Required | Notes |
-|---|---|---:|---|
-| `id` | `uuid` | Yes | Primary key; references `auth.users.id` |
-| `full_name` | `text` | Yes | Display name |
-| `email` | `text` | Yes | Account email |
-| `phone_number` | `text` | No | Contact number |
-| `role` | `text` or existing enum | Yes | Must include `admin` and `owner` |
-| `status` | `text` or existing enum | Yes | Normally `active` or `inactive` |
-| `created_at` | `timestamptz` | Yes | Defaults to `now()` |
+| Column         | Type                    | Required | Notes                                   |
+| -------------- | ----------------------- | -------: | --------------------------------------- |
+| `id`           | `uuid`                  |      Yes | Primary key; references `auth.users.id` |
+| `full_name`    | `text`                  |      Yes | Display name                            |
+| `email`        | `text`                  |      Yes | Account email                           |
+| `phone_number` | `text`                  |       No | Contact number                          |
+| `role`         | `text` or existing enum |      Yes | Must include `admin` and `owner`        |
+| `status`       | `text` or existing enum |      Yes | Normally `active` or `inactive`         |
+| `created_at`   | `timestamptz`           |      Yes | Defaults to `now()`                     |
 
 ### `store_owners`
 
-| Column | Type | Required | Notes |
-|---|---|---:|---|
-| `id` | `uuid` | Yes | Store scope primary key |
-| `profile_id` | `uuid` | Yes | FK to `profiles.id`; unique per owner |
-| `store_name` | `text` | Yes | Store name |
-| `branch` | `text` | No | Existing legacy field; this system has no branch model |
-| `created_at` | `timestamptz` | Yes | Defaults to `now()` |
-| `updated_at` | `timestamptz` | Yes | Defaults to `now()` |
+| Column       | Type          | Required | Notes                                                  |
+| ------------ | ------------- | -------: | ------------------------------------------------------ |
+| `id`         | `uuid`        |      Yes | Store scope primary key                                |
+| `profile_id` | `uuid`        |      Yes | FK to `profiles.id`; unique per owner                  |
+| `store_name` | `text`        |      Yes | Store name                                             |
+| `branch`     | `text`        |       No | Existing legacy field; this system has no branch model |
+| `created_at` | `timestamptz` |      Yes | Defaults to `now()`                                    |
+| `updated_at` | `timestamptz` |      Yes | Defaults to `now()`                                    |
 
 The migration below assumes these tables already exist because the Admin side uses them.
 
@@ -196,6 +196,8 @@ select
   c.phone_number,
   c.address,
   c.status,
+  c.created_at,
+  c.updated_at,
   coalesce(credits.total_credit, 0)::numeric(12,2) -
     coalesce(payments.total_paid, 0)::numeric(12,2) as balance
 from public.customers c
@@ -427,22 +429,22 @@ Run `docs/customer-management-supabase.sql` after this schema block. It installs
 
 The UI currently calls `src/lib/api/owner.js`. Replace the mock implementation there with Supabase queries while preserving the function names:
 
-| Mock API function | Supabase operation |
-|---|---|
-| `listProducts` | `from('products').select('*').order('name')` |
-| `createProduct` | Insert into `products` with the current owner's `store_id` |
-| `updateProduct` | Update `products` by `id`, protected by RLS |
-| `deleteProduct` | Delete `products` by `id`; restrict if historical references require it |
-| `toggleProductStatus` | Update `products.status` |
-| `listCustomers` | Select from `owner_customer_balances` |
-| `createCustomer` | Insert into `customers`; let PostgreSQL generate `customer_code` |
-| `updateCustomer` | Update `customers` by `id` |
-| `deleteCustomer` | Delete `customers` by `id` after checking history constraints |
-| `listCredits` | Select `credit_entries` with nested `credit_entry_items` |
-| `createCredit` | Insert `credit_entries` and `credit_entry_items` in one RPC/transaction |
-| `createPayment` | Insert into `payments` through an RPC that validates the balance |
-| `listTransactions` | Select credit entries and nested item names |
-| `getDashboard` | Call the three dashboard RPCs |
+| Mock API function     | Supabase operation                                                      |
+| --------------------- | ----------------------------------------------------------------------- |
+| `listProducts`        | `from('products').select('*').order('name')`                            |
+| `createProduct`       | Insert into `products` with the current owner's `store_id`              |
+| `updateProduct`       | Update `products` by `id`, protected by RLS                             |
+| `deleteProduct`       | Delete `products` by `id`; restrict if historical references require it |
+| `toggleProductStatus` | Update `products.status`                                                |
+| `listCustomers`       | Select from `owner_customer_balances`                                   |
+| `createCustomer`      | Insert into `customers`; let PostgreSQL generate `customer_code`        |
+| `updateCustomer`      | Update `customers` by `id`                                              |
+| `deleteCustomer`      | Delete `customers` by `id` after checking history constraints           |
+| `listCredits`         | Select `credit_entries` with nested `credit_entry_items`                |
+| `createCredit`        | Insert `credit_entries` and `credit_entry_items` in one RPC/transaction |
+| `createPayment`       | Insert into `payments` through an RPC that validates the balance        |
+| `listTransactions`    | Select credit entries and nested item names                             |
+| `getDashboard`        | Call the three dashboard RPCs                                           |
 
 For credit creation and payment creation, prefer RPC functions so the parent row, child rows, balance validation, and amount calculations are atomic.
 

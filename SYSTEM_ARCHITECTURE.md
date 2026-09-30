@@ -1,25 +1,25 @@
-# System Architecture — Sari-Sari
+# System Architecture: Sari-Sari
 
-Customer Credit Ledger Management System (CCLMS)
+Customer Credit Ledger Management System (CCLMS).
 
 **Model:** Each store owner manages one store. Admin users manage owner accounts. There is no staff role, branch model, or external product-data integration.
 
 ## 1. Tech Stack
 
-| Layer | Technology | Notes |
-|---|---|---|
-| Frontend | React + Vite | JavaScript/JSX SPA |
-| Routing | React Router DOM | Admin and Owner route trees with role guards |
-| UI | shadcn/ui, Radix, Tailwind CSS | JSX components in `src/components/ui` |
-| Icons | lucide-react | Existing project icon library |
-| Notifications | Sonner | CRUD, payment, and export feedback |
-| Forms | react-hook-form + Zod | Client-side validation |
-| Client cache | TanStack Query | Owner profile query and cache updates |
-| Charts | Recharts | Owner dashboard charts |
-| Backend | Supabase | Auth, Postgres, RLS, and RPC functions |
-| Hosting | Vercel | Static SPA deployment |
+| Layer         | Technology                     | Notes                                        |
+| ------------- | ------------------------------ | -------------------------------------------- |
+| Frontend      | React + Vite                   | JavaScript/JSX SPA                           |
+| Routing       | React Router DOM               | Admin and Owner route trees with role guards |
+| UI            | shadcn/ui, Radix, Tailwind CSS | JSX components in `src/components/ui`        |
+| Icons         | lucide-react                   | Existing project icon library                |
+| Notifications | Sonner                         | CRUD, payment, and export feedback           |
+| Forms         | react-hook-form + Zod          | Client-side validation                       |
+| Client cache  | TanStack Query                 | Owner profile query and cache updates        |
+| Charts        | Recharts                       | Owner dashboard charts                       |
+| Backend       | Supabase                       | Auth, Postgres, RLS, and RPC functions       |
+| Hosting       | Vercel                         | Static SPA deployment                        |
 
-## 2. Architecture Diagram
+## 2. Request Flow
 
 ```mermaid
 flowchart TD
@@ -31,11 +31,11 @@ flowchart TD
     OwnerApi --> SupabaseClient[src/lib/supabase.js]
     SupabaseClient --> Auth[Supabase Auth]
     SupabaseClient --> Database[Supabase Postgres + RLS]
-    OwnerApi --> RPC[Owner RPC Functions]
+    OwnerApi --> RPC[Owner RPC functions]
     Vercel[Vercel] --> Browser
 ```
 
-The UI does not place Supabase queries in every component. Owner business data goes through `src/lib/api/owner.js`, which maps database fields into the camelCase shapes expected by the JSX pages.
+The UI does not place Supabase queries in every component. Owner business data goes through `src/lib/api/owner.js`, which maps database fields into the camelCase shapes expected by JSX pages. Admin owner management uses Supabase Edge Functions for privileged Auth operations.
 
 ## 3. Authentication and Route Guards
 
@@ -59,7 +59,7 @@ The UI does not place Supabase queries in every component. Owner business data g
 ### Store Owner Routes
 
 - `/owner` — Owner dashboard
-- `/owner/profile` — Owner profile UI, currently using a separate mock profile adapter
+- `/owner/profile` — Owner profile UI
 - `/owner/credits` — Credit ledger, customer balances, and payments
 - `/owner/products` — Product CRUD and status management
 - `/owner/transactions` — Transaction history and Excel export
@@ -159,7 +159,7 @@ These methods query the `products` table and respect RLS.
 
 ### Customers
 
-`CutomerManagement.jsx` uses `use-owner-customers.js`, which calls:
+`CustomerManagement.jsx` uses `use-owner-customers.js`, which calls:
 
 - `ownerApi.listCustomers()` from `owner_customer_balances`
 - `ownerApi.createCustomer()` without inserting `customer_code`
@@ -206,7 +206,7 @@ p_amount
 p_payment_type
 ```
 
-The RPCs should validate ownership, product/customer relationships, balance limits, and atomic writes.
+The RPCs validate ownership, product/customer relationships, amount limits, and atomic writes. The browser does not provide a store ID.
 
 ### Dashboard
 
@@ -222,7 +222,7 @@ The API normalizes the results into dashboard totals, ranking rows, and monthly 
 
 `TransactionHistory.jsx` uses `ownerApi.listTransactions()` to read real `credit_entries` with related customers and `credit_entry_items`. Search and date filtering happen on the returned data. Excel export uses the complete filtered dataset, not only the current page.
 
-## 7. Row Level Security
+## 7. Security Boundary
 
 RLS must remain enabled on:
 
@@ -261,7 +261,7 @@ VITE_SUPABASE_PUBLISHABLE_KEY=your-supabase-publishable-key
 
 Use these names in local `.env.local` and Vercel environment settings. Do not commit secret values.
 
-## 9. Implemented Folder Structure
+## 9. Code Organization
 
 ```text
 cclms_react/src/
@@ -287,7 +287,7 @@ cclms_react/src/
 └── main.jsx
 ```
 
-The project uses JavaScript and JSX only. Shared data shapes are documented with JSDoc rather than TypeScript interfaces.
+The project uses JavaScript and JSX only. Shared data shapes are documented with JSDoc rather than TypeScript interfaces. See `FILE_STRUCTURE.md` for the full map.
 
 ## 10. Deployment
 
@@ -297,6 +297,13 @@ The project uses JavaScript and JSX only. Shared data shapes are documented with
 4. Configure the SPA rewrite to send application routes to `index.html`.
 5. Every push to the deployment branch can trigger a new Vercel deployment.
 6. Monitor Supabase free-tier database, bandwidth, Auth, and function limits.
+
+For endpoint details, security rules, UI conventions, and scaling guidance, see:
+
+- `API_ENDPOINTS.md`
+- `SECURITY.md`
+- `UI_DESIGN.md`
+- `SCALABILITY.md`
 
 For complete table definitions, indexes, RLS guidance, and migration notes, see:
 

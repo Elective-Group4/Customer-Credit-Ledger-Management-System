@@ -33,6 +33,35 @@ alter table public.customers
   alter column customer_code
   set default public.generate_customer_code();
 
+-- Include timestamps in the balance view so the customer table can display
+-- when each customer was created and last updated.
+create or replace view public.owner_customer_balances
+with (security_invoker = true)
+as
+select
+  c.id,
+  c.store_id,
+  c.customer_code,
+  c.name,
+  c.phone_number,
+  c.address,
+  c.status,
+  c.created_at,
+  c.updated_at,
+  coalesce(credits.total_credit, 0)::numeric(12,2) -
+    coalesce(payments.total_paid, 0)::numeric(12,2) as balance
+from public.customers c
+left join (
+  select customer_id, sum(total_amount) as total_credit
+  from public.credit_entries
+  group by customer_id
+) credits on credits.customer_id = c.id
+left join (
+  select customer_id, sum(amount) as total_paid
+  from public.payments
+  group by customer_id
+) payments on payments.customer_id = c.id;
+
 -- A duplicate must be resolved before the global constraint can be created.
 do $$
 begin
