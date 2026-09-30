@@ -1,13 +1,13 @@
-import { Outlet } from "react-router-dom"
-import { AppSidebar } from "@/components/app-sidebar"
+import { Outlet } from "react-router-dom";
+import { AppSidebar } from "@/components/app-sidebar";
 
 import {
   SidebarInset,
   SidebarProvider,
   SidebarTrigger,
-} from "@/components/ui/sidebar"
+} from "@/components/ui/sidebar";
 
-import { TooltipProvider } from "@/components/ui/tooltip"
+import { TooltipProvider } from "@/components/ui/tooltip";
 
 export default function AdminLayout() {
   return (
@@ -23,5 +23,5 @@ export default function AdminLayout() {
         </SidebarInset>
       </TooltipProvider>
     </SidebarProvider>
-  )
+  );
 }

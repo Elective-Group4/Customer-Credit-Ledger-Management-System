@@ -1,7 +1,7 @@
-import * as React from "react"
-import { useEffect, useState } from "react"
-import { supabase } from "@/lib/supabase"
-import { getClientIp } from "@/lib/client-ip"
+import * as React from "react";
+import { useEffect, useState } from "react";
+import { supabase } from "@/lib/supabase";
+import { getClientIp } from "@/lib/client-ip";
 
 import {
   Plus,
@@ -11,14 +11,9 @@ import {
   Trash2,
   Eye,
   Loader2,
-} from "lucide-react"
+} from "lucide-react";
 
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 import {
   Table,
@@ -27,7 +22,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table"
+} from "@/components/ui/table";
 
 import {
   Dialog,
@@ -36,7 +31,7 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog"
+} from "@/components/ui/dialog";
 
 import {
   DropdownMenu,
@@ -44,7 +39,7 @@ import {
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
+} from "@/components/ui/dropdown-menu";
 
 import {
   AlertDialog,
@@ -55,10 +50,10 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from "@/components/ui/alert-dialog"
+} from "@/components/ui/alert-dialog";
 
-import { Input } from "@/components/ui/input"
-import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 
 import {
   Select,
@@ -66,38 +61,36 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select"
+} from "@/components/ui/select";
 
-import { Label } from "@/components/ui/label"
+import { Label } from "@/components/ui/label";
 
-import { toast } from "sonner"
-
+import { toast } from "sonner";
 
 export default function OwnerManagement() {
-
   // =====================================================
   // STATE
   // =====================================================
 
-  const [owners, setOwners] = useState([])
+  const [owners, setOwners] = useState([]);
 
-  const [search, setSearch] = useState("")
+  const [search, setSearch] = useState("");
 
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(true);
 
-  const [saving, setSaving] = useState(false)
+  const [saving, setSaving] = useState(false);
 
-  const [dialogOpen, setDialogOpen] = useState(false)
+  const [dialogOpen, setDialogOpen] = useState(false);
 
-  const [viewDialogOpen, setViewDialogOpen] = useState(false)
+  const [viewDialogOpen, setViewDialogOpen] = useState(false);
 
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
-  const [editingOwner, setEditingOwner] = useState(null)
+  const [editingOwner, setEditingOwner] = useState(null);
 
-  const [selectedOwner, setSelectedOwner] = useState(null)
+  const [selectedOwner, setSelectedOwner] = useState(null);
 
-  const [ownerToDelete, setOwnerToDelete] = useState(null)
+  const [ownerToDelete, setOwnerToDelete] = useState(null);
 
   const [form, setForm] = useState({
     full_name: "",
@@ -107,22 +100,20 @@ export default function OwnerManagement() {
     store_name: "",
     branch: "",
     status: "active",
-  })
-
+  });
 
   // =====================================================
   // FETCH OWNERS
   // =====================================================
 
   const fetchOwners = async () => {
-
     try {
-
-      setLoading(true)
+      setLoading(true);
 
       const { data, error } = await supabase
         .from("store_owners")
-        .select(`
+        .select(
+          `
           id,
           profile_id,
           store_name,
@@ -138,50 +129,41 @@ export default function OwnerManagement() {
             status,
             created_at
           )
-        `)
+        `,
+        )
         .order("created_at", {
           ascending: false,
-        })
+        });
 
       if (error) {
-        throw error
+        throw error;
       }
 
-      setOwners(data || [])
-
+      setOwners(data || []);
     } catch (error) {
-
-      console.error(error)
+      console.error(error);
 
       toast.error("Unable to load store owners", {
         description: error.message,
-      })
-
+      });
     } finally {
-
-      setLoading(false)
-
+      setLoading(false);
     }
-  }
-
+  };
 
   // =====================================================
   // LOAD DATA
   // =====================================================
 
   useEffect(() => {
-
-    fetchOwners()
-
-  }, [])
-
+    fetchOwners();
+  }, []);
 
   // =====================================================
   // RESET FORM
   // =====================================================
 
   const resetForm = () => {
-
     setForm({
       full_name: "",
       email: "",
@@ -190,33 +172,27 @@ export default function OwnerManagement() {
       store_name: "",
       branch: "",
       status: "active",
-    })
-
-  }
-
+    });
+  };
 
   // =====================================================
   // OPEN ADD
   // =====================================================
 
   const openAddDialog = () => {
+    setEditingOwner(null);
 
-    setEditingOwner(null)
+    resetForm();
 
-    resetForm()
-
-    setDialogOpen(true)
-
-  }
-
+    setDialogOpen(true);
+  };
 
   // =====================================================
   // OPEN EDIT
   // =====================================================
 
   const openEditDialog = (owner) => {
-
-    setEditingOwner(owner)
+    setEditingOwner(owner);
 
     setForm({
       full_name: owner.profiles?.full_name || "",
@@ -226,402 +202,317 @@ export default function OwnerManagement() {
       store_name: owner.store_name || "",
       branch: owner.branch || "",
       status: owner.profiles?.status || "active",
-    })
+    });
 
-    setDialogOpen(true)
-
-  }
-
+    setDialogOpen(true);
+  };
 
   // =====================================================
   // HANDLE INPUT
   // =====================================================
 
   const handleChange = (field, value) => {
-
     setForm((previous) => ({
       ...previous,
       [field]: value,
-    }))
-
-  }
-
+    }));
+  };
 
   // =====================================================
   // CREATE OWNER
   // =====================================================
 
   const createOwner = async () => {
-  if (!form.full_name.trim()) {
-    toast.error("Store owner name is required")
-    return
-  }
-
-  if (!form.email.trim()) {
-    toast.error("Email is required")
-    return
-  }
-
-  if (!form.password) {
-    toast.error("Password is required")
-    return
-  }
-
-  if (form.password.length < 6) {
-    toast.error("Password must be at least 6 characters")
-    return
-  }
-
-  if (!form.phone_number.trim()) {
-    toast.error("Phone number is required")
-    return
-  }
-
-  if (!form.store_name.trim()) {
-    toast.error("Store name is required")
-    return
-  }
-
-  if (!form.branch.trim()) {
-    toast.error("Branch is required")
-    return
-  }
-
-  try {
-    setSaving(true)
-
-    const {
-      data: { session },
-      error: sessionError,
-    } = await supabase.auth.getSession()
-
-    console.log("Current session:", session)
-    console.log(
-      "Has access token:",
-      !!session?.access_token
-    )
-
-    if (sessionError) {
-      throw sessionError
+    if (!form.full_name.trim()) {
+      toast.error("Store owner name is required");
+      return;
     }
 
-    if (!session) {
-      throw new Error(
-        "No active admin session. Please log in again."
-      )
+    if (!form.email.trim()) {
+      toast.error("Email is required");
+      return;
     }
 
-    const ipAddress = await getClientIp()
+    if (!form.password) {
+      toast.error("Password is required");
+      return;
+    }
 
-    const { data, error } =
-      await supabase.functions.invoke(
-        "smart-action",
-        {
-          body: {
-            full_name: form.full_name.trim(),
-            email: form.email.trim(),
-            password: form.password,
-            phone_number: form.phone_number.trim(),
-            store_name: form.store_name.trim(),
-            branch: form.branch.trim(),
-            status: form.status,
-            ip_address: ipAddress,
-          },
+    if (form.password.length < 6) {
+      toast.error("Password must be at least 6 characters");
+      return;
+    }
+
+    if (!form.phone_number.trim()) {
+      toast.error("Phone number is required");
+      return;
+    }
+
+    if (!form.store_name.trim()) {
+      toast.error("Store name is required");
+      return;
+    }
+
+    if (!form.branch.trim()) {
+      toast.error("Branch is required");
+      return;
+    }
+
+    try {
+      setSaving(true);
+
+      const {
+        data: { session },
+        error: sessionError,
+      } = await supabase.auth.getSession();
+
+      console.log("Current session:", session);
+      console.log("Has access token:", !!session?.access_token);
+
+      if (sessionError) {
+        throw sessionError;
+      }
+
+      if (!session) {
+        throw new Error("No active admin session. Please log in again.");
+      }
+
+      const ipAddress = await getClientIp();
+
+      const { data, error } = await supabase.functions.invoke("smart-action", {
+        body: {
+          full_name: form.full_name.trim(),
+          email: form.email.trim(),
+          password: form.password,
+          phone_number: form.phone_number.trim(),
+          store_name: form.store_name.trim(),
+          branch: form.branch.trim(),
+          status: form.status,
+          ip_address: ipAddress,
+        },
+      });
+
+      console.log("Function data:", data);
+      console.log("Function error:", error);
+
+      if (error) {
+        throw error;
+      }
+
+      if (!data?.success) {
+        throw new Error(data?.message || "Failed to create store owner");
+      }
+
+      toast.success("Store owner created successfully");
+
+      setDialogOpen(false);
+      resetForm();
+
+      await fetchOwners();
+    } catch (error) {
+      let errorMessage = error?.message || "The owner could not be created.";
+
+      if (error?.context instanceof Response) {
+        try {
+          const responseBody = await error.context.clone().json();
+          errorMessage = responseBody?.message || errorMessage;
+        } catch {
+          // Keep the generic FunctionsHttpError message when the response is not JSON.
         }
-      )
-
-    console.log("Function data:", data)
-    console.log("Function error:", error)
-
-    if (error) {
-      throw error
-    }
-
-    if (!data?.success) {
-      throw new Error(
-        data?.message ||
-        "Failed to create store owner"
-      )
-    }
-
-    toast.success(
-      "Store owner created successfully"
-    )
-
-    setDialogOpen(false)
-    resetForm()
-
-    await fetchOwners()
-  } catch (error) {
-    let errorMessage = error?.message || "The owner could not be created."
-
-    if (error?.context instanceof Response) {
-      try {
-        const responseBody = await error.context.clone().json()
-        errorMessage = responseBody?.message || errorMessage
-      } catch {
-        // Keep the generic FunctionsHttpError message when the response is not JSON.
       }
-    }
 
-    console.error(
-      "Create owner error:",
-      error,
-      { message: errorMessage }
-    )
+      console.error("Create owner error:", error, { message: errorMessage });
 
-    toast.error(
-      "Failed to create store owner",
-      {
+      toast.error("Failed to create store owner", {
         description: errorMessage,
-      }
-    )
-  } finally {
-    setSaving(false)
-  }
-}
-  
-
+      });
+    } finally {
+      setSaving(false);
+    }
+  };
 
   // =====================================================
   // UPDATE OWNER
   // =====================================================
 
   const updateOwner = async () => {
-
     if (!editingOwner) {
-      return
+      return;
     }
 
     if (!form.full_name.trim()) {
-      toast.error("Store owner name is required")
-      return
+      toast.error("Store owner name is required");
+      return;
     }
 
     if (!form.email.trim()) {
-      toast.error("Email is required")
-      return
+      toast.error("Email is required");
+      return;
     }
 
     if (!form.phone_number.trim()) {
-      toast.error("Phone number is required")
-      return
+      toast.error("Phone number is required");
+      return;
     }
 
     if (!form.store_name.trim()) {
-      toast.error("Store name is required")
-      return
+      toast.error("Store name is required");
+      return;
     }
 
     if (!form.branch.trim()) {
-      toast.error("Branch is required")
-      return
+      toast.error("Branch is required");
+      return;
     }
 
     try {
+      setSaving(true);
 
-      setSaving(true)
-
-      const { data, error } = await supabase.functions.invoke(
-        "smart-action",
-        {
-          body: {
-            action: "update_owner",
-            profile_id: editingOwner.profile_id,
-            store_owner_id: editingOwner.id,
-            full_name: form.full_name.trim(),
-            email: form.email.trim(),
-            phone_number: form.phone_number.trim(),
-            store_name: form.store_name.trim(),
-            branch: form.branch.trim(),
-            status: form.status,
-          },
-        }
-      )
+      const { data, error } = await supabase.functions.invoke("smart-action", {
+        body: {
+          action: "update_owner",
+          profile_id: editingOwner.profile_id,
+          store_owner_id: editingOwner.id,
+          full_name: form.full_name.trim(),
+          email: form.email.trim(),
+          phone_number: form.phone_number.trim(),
+          store_name: form.store_name.trim(),
+          branch: form.branch.trim(),
+          status: form.status,
+        },
+      });
 
       if (error) {
-        throw error
+        throw error;
       }
 
       if (!data?.success) {
-        throw new Error(data?.message || "Failed to update store owner")
+        throw new Error(data?.message || "Failed to update store owner");
       }
 
-      toast.success(
-        "Store owner updated successfully"
-      )
+      toast.success("Store owner updated successfully");
 
-      setDialogOpen(false)
+      setDialogOpen(false);
 
-      setEditingOwner(null)
+      setEditingOwner(null);
 
-      resetForm()
+      resetForm();
 
-      await fetchOwners()
-
+      await fetchOwners();
     } catch (error) {
-
       console.error("EDIT OWNER ERROR:", {
         code: error?.code,
         message: error?.message,
         details: error?.details,
         hint: error?.hint,
         error,
-      })
+      });
 
-      toast.error(
-        "Failed to update store owner",
-        {
-          description:
-            error?.message ||
-            "The owner could not be updated.",
-        }
-      )
-
+      toast.error("Failed to update store owner", {
+        description: error?.message || "The owner could not be updated.",
+      });
     } finally {
-
-      setSaving(false)
-
+      setSaving(false);
     }
-  }
-
+  };
 
   // =====================================================
   // OPEN DELETE CONFIRMATION
   // =====================================================
 
   const openDeleteDialog = (owner) => {
+    setOwnerToDelete(owner);
 
-    setOwnerToDelete(owner)
-
-    setDeleteDialogOpen(true)
-
-  }
-
+    setDeleteDialogOpen(true);
+  };
 
   // =====================================================
   // DELETE OWNER
   // =====================================================
 
   const deleteOwner = async () => {
-
     if (!ownerToDelete) {
-      return
+      return;
     }
 
     try {
+      setSaving(true);
 
-      setSaving(true)
-
-      const { data, error } = await supabase.functions.invoke(
-        "smart-action",
-        {
-          body: {
-            action: "delete_owner",
-            profile_id: ownerToDelete.profile_id,
-            store_owner_id: ownerToDelete.id,
-          },
-        }
-      )
+      const { data, error } = await supabase.functions.invoke("smart-action", {
+        body: {
+          action: "delete_owner",
+          profile_id: ownerToDelete.profile_id,
+          store_owner_id: ownerToDelete.id,
+        },
+      });
 
       if (error) {
-        throw error
+        throw error;
       }
 
       if (!data?.success) {
-        throw new Error(data?.message || "Failed to delete store owner")
+        throw new Error(data?.message || "Failed to delete store owner");
       }
 
-      toast.success(
-        "Store owner deleted successfully"
-      )
+      toast.success("Store owner deleted successfully");
 
-      setDeleteDialogOpen(false)
+      setDeleteDialogOpen(false);
 
-      setOwnerToDelete(null)
+      setOwnerToDelete(null);
 
-      await fetchOwners()
-
+      await fetchOwners();
     } catch (error) {
-
       console.error("DELETE OWNER ERROR:", {
         code: error?.code,
         message: error?.message,
         details: error?.details,
         hint: error?.hint,
         error,
-      })
+      });
 
-      toast.error(
-        "Failed to delete store owner",
-        {
-          description:
-            error?.message ||
-            "The owner could not be deleted.",
-        }
-      )
-
+      toast.error("Failed to delete store owner", {
+        description: error?.message || "The owner could not be deleted.",
+      });
     } finally {
-
-      setSaving(false)
-
+      setSaving(false);
     }
-  }
-
+  };
 
   // =====================================================
   // VIEW OWNER
   // =====================================================
 
   const viewOwner = (owner) => {
+    setSelectedOwner(owner);
 
-    setSelectedOwner(owner)
-
-    setViewDialogOpen(true)
-
-  }
-
+    setViewDialogOpen(true);
+  };
 
   // =====================================================
   // SEARCH
   // =====================================================
 
-  const filteredOwners = owners.filter(
-    (owner) => {
+  const filteredOwners = owners.filter((owner) => {
+    const searchValue = search.toLowerCase().trim();
 
-      const searchValue =
-        search.toLowerCase().trim()
+    const name = owner.profiles?.full_name?.toLowerCase() || "";
 
-      const name =
-        owner.profiles?.full_name
-          ?.toLowerCase() || ""
+    const email = owner.profiles?.email?.toLowerCase() || "";
 
-      const email =
-        owner.profiles?.email
-          ?.toLowerCase() || ""
+    const phone = owner.profiles?.phone_number?.toLowerCase() || "";
 
-      const phone =
-        owner.profiles?.phone_number
-          ?.toLowerCase() || ""
+    const store = owner.store_name?.toLowerCase() || "";
 
-      const store =
-        owner.store_name
-          ?.toLowerCase() || ""
+    const branch = owner.branch?.toLowerCase() || "";
 
-      const branch =
-        owner.branch
-          ?.toLowerCase() || ""
-
-      return (
-        name.includes(searchValue) ||
-        email.includes(searchValue) ||
-        phone.includes(searchValue) ||
-        store.includes(searchValue) ||
-        branch.includes(searchValue)
-      )
-    }
-  )
-
+    return (
+      name.includes(searchValue) ||
+      email.includes(searchValue) ||
+      phone.includes(searchValue) ||
+      store.includes(searchValue) ||
+      branch.includes(searchValue)
+    );
+  });
 
   // =====================================================
   // UI
@@ -629,7 +520,6 @@ export default function OwnerManagement() {
 
   return (
     <div className="admin-theme-surface flex min-h-full flex-col gap-6 bg-background p-5 md:p-7">
-
       {/* PAGE HEADER */}
       <div className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
         <div>
@@ -651,41 +541,47 @@ export default function OwnerManagement() {
         </Button>
       </div>
 
-
       {/* SUMMARY */}
       <div className="grid gap-3 sm:grid-cols-3">
         <div className="rounded-xl border border-stone-200 bg-white px-4 py-3 shadow-sm">
-          <p className="text-xs font-medium text-muted-foreground">Total Owners</p>
+          <p className="text-xs font-medium text-muted-foreground">
+            Total Owners
+          </p>
           <p className="mt-1 text-2xl font-bold tracking-tight text-[#171717]">
             {loading ? "..." : owners.length}
           </p>
         </div>
 
         <div className="rounded-xl border border-stone-200 bg-white px-4 py-3 shadow-sm">
-          <p className="text-xs font-medium text-muted-foreground">Active Owners</p>
+          <p className="text-xs font-medium text-muted-foreground">
+            Active Owners
+          </p>
           <p className="mt-1 text-2xl font-bold tracking-tight text-[#171717]">
             {loading
               ? "..."
               : owners.filter(
                   (owner) =>
-                    (owner.profiles?.status || "active").toLowerCase() === "active"
+                    (owner.profiles?.status || "active").toLowerCase() ===
+                    "active",
                 ).length}
           </p>
         </div>
 
         <div className="rounded-xl border border-stone-200 bg-white px-4 py-3 shadow-sm">
-          <p className="text-xs font-medium text-muted-foreground">Inactive Owners</p>
+          <p className="text-xs font-medium text-muted-foreground">
+            Inactive Owners
+          </p>
           <p className="mt-1 text-2xl font-bold tracking-tight text-[#171717]">
             {loading
               ? "..."
               : owners.filter(
                   (owner) =>
-                    (owner.profiles?.status || "active").toLowerCase() !== "active"
+                    (owner.profiles?.status || "active").toLowerCase() !==
+                    "active",
                 ).length}
           </p>
         </div>
       </div>
-
 
       {/* OWNER CARD */}
       <Card className="overflow-hidden rounded-xl border-stone-200 bg-white shadow-sm">
@@ -774,17 +670,18 @@ export default function OwnerManagement() {
                 {/* DATA */}
                 {!loading &&
                   filteredOwners.map((owner) => {
-                    const ownerName = owner.profiles?.full_name || "Unknown"
-                    const initials = ownerName
-                      .split(" ")
-                      .filter(Boolean)
-                      .slice(0, 2)
-                      .map((part) => part.charAt(0))
-                      .join("")
-                      .toUpperCase() || "OW"
+                    const ownerName = owner.profiles?.full_name || "Unknown";
+                    const initials =
+                      ownerName
+                        .split(" ")
+                        .filter(Boolean)
+                        .slice(0, 2)
+                        .map((part) => part.charAt(0))
+                        .join("")
+                        .toUpperCase() || "OW";
 
-                    const status = owner.profiles?.status || "active"
-                    const isActive = status.toLowerCase() === "active"
+                    const status = owner.profiles?.status || "active";
+                    const isActive = status.toLowerCase() === "active";
 
                     return (
                       <TableRow
@@ -813,7 +710,8 @@ export default function OwnerManagement() {
                               {owner.profiles?.email || "-"}
                             </p>
                             <p className="mt-0.5 text-xs text-muted-foreground">
-                              {owner.profiles?.phone_number || "No phone number"}
+                              {owner.profiles?.phone_number ||
+                                "No phone number"}
                             </p>
                           </div>
                         </TableCell>
@@ -865,12 +763,16 @@ export default function OwnerManagement() {
                               align="end"
                               className="w-40 rounded-lg border-stone-200"
                             >
-                              <DropdownMenuItem onClick={() => viewOwner(owner)}>
+                              <DropdownMenuItem
+                                onClick={() => viewOwner(owner)}
+                              >
                                 <Eye className="mr-2 h-4 w-4" />
                                 View Details
                               </DropdownMenuItem>
 
-                              <DropdownMenuItem onClick={() => openEditDialog(owner)}>
+                              <DropdownMenuItem
+                                onClick={() => openEditDialog(owner)}
+                              >
                                 <Pencil className="mr-2 h-4 w-4" />
                                 Edit Owner
                               </DropdownMenuItem>
@@ -888,14 +790,13 @@ export default function OwnerManagement() {
                           </DropdownMenu>
                         </TableCell>
                       </TableRow>
-                    )
+                    );
                   })}
               </TableBody>
             </Table>
           </div>
         </CardContent>
       </Card>
-
 
       {/* ================================================= */}
       {/* ADD / EDIT DIALOG */}
@@ -930,7 +831,9 @@ export default function OwnerManagement() {
               <Input
                 id="full_name"
                 value={form.full_name}
-                onChange={(event) => handleChange("full_name", event.target.value)}
+                onChange={(event) =>
+                  handleChange("full_name", event.target.value)
+                }
                 placeholder="Juan Dela Cruz"
                 className="h-10 border-stone-200 focus-visible:ring-[#8B4E2F]/30 dark:border-border dark:bg-background"
               />
@@ -949,7 +852,8 @@ export default function OwnerManagement() {
               />
               {editingOwner && (
                 <p className="text-xs leading-relaxed text-muted-foreground">
-                  Auth email changes require a server-side admin operation and are not available from the browser form.
+                  Auth email changes require a server-side admin operation and
+                  are not available from the browser form.
                 </p>
               )}
             </div>
@@ -961,11 +865,15 @@ export default function OwnerManagement() {
                   id="password"
                   type="password"
                   value={form.password}
-                  onChange={(event) => handleChange("password", event.target.value)}
+                  onChange={(event) =>
+                    handleChange("password", event.target.value)
+                  }
                   placeholder="Enter password"
                   className="h-10 border-stone-200 focus-visible:ring-[#8B4E2F]/30 dark:border-border dark:bg-background"
                 />
-                <p className="text-xs text-muted-foreground">Minimum 6 characters.</p>
+                <p className="text-xs text-muted-foreground">
+                  Minimum 6 characters.
+                </p>
               </div>
             )}
 
@@ -975,7 +883,9 @@ export default function OwnerManagement() {
                 <Input
                   id="phone_number"
                   value={form.phone_number}
-                  onChange={(event) => handleChange("phone_number", event.target.value)}
+                  onChange={(event) =>
+                    handleChange("phone_number", event.target.value)
+                  }
                   placeholder="09171234567"
                   className="h-10 border-stone-200 focus-visible:ring-[#8B4E2F]/30 dark:border-border dark:bg-background"
                 />
@@ -986,7 +896,9 @@ export default function OwnerManagement() {
                 <Input
                   id="store_name"
                   value={form.store_name}
-                  onChange={(event) => handleChange("store_name", event.target.value)}
+                  onChange={(event) =>
+                    handleChange("store_name", event.target.value)
+                  }
                   placeholder="Juan Sari-Sari Store"
                   className="h-10 border-stone-200 focus-visible:ring-[#8B4E2F]/30 dark:border-border dark:bg-background"
                 />
@@ -999,7 +911,9 @@ export default function OwnerManagement() {
                 <Input
                   id="branch"
                   value={form.branch}
-                  onChange={(event) => handleChange("branch", event.target.value)}
+                  onChange={(event) =>
+                    handleChange("branch", event.target.value)
+                  }
                   placeholder="Main Branch"
                   className="h-10 border-stone-200 focus-visible:ring-[#8B4E2F]/30"
                 />
@@ -1045,7 +959,6 @@ export default function OwnerManagement() {
         </DialogContent>
       </Dialog>
 
-
       {/* ================================================= */}
       {/* VIEW OWNER */}
       {/* ================================================= */}
@@ -1068,19 +981,23 @@ export default function OwnerManagement() {
                 <div className="relative px-6 pb-6">
                   <div className="-mt-10 flex items-end justify-between">
                     <div className="flex h-20 w-20 items-center justify-center rounded-2xl border-4 border-white bg-[#F5EEE9] text-2xl font-bold text-[#8B4E2F] shadow-sm dark:border-card dark:bg-[#8B4E2F]/20 dark:text-[#D9A66A]">
-                      {selectedOwner.profiles?.full_name?.charAt(0).toUpperCase() || "?"}
+                      {selectedOwner.profiles?.full_name
+                        ?.charAt(0)
+                        .toUpperCase() || "?"}
                     </div>
 
                     <span
                       className={`mb-2 inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold capitalize ${
-                        selectedOwner.profiles?.status?.toLowerCase() === "active"
+                        selectedOwner.profiles?.status?.toLowerCase() ===
+                        "active"
                           ? "bg-emerald-50 text-emerald-700"
                           : "bg-stone-100 text-stone-600"
                       }`}
                     >
                       <span
                         className={`h-1.5 w-1.5 rounded-full ${
-                          selectedOwner.profiles?.status?.toLowerCase() === "active"
+                          selectedOwner.profiles?.status?.toLowerCase() ===
+                          "active"
                             ? "bg-emerald-600"
                             : "bg-stone-400"
                         }`}
@@ -1132,7 +1049,9 @@ export default function OwnerManagement() {
                       </p>
                       <p className="mt-1 text-sm font-medium text-[#171717] dark:text-foreground">
                         {selectedOwner.created_at
-                          ? new Date(selectedOwner.created_at).toLocaleDateString()
+                          ? new Date(
+                              selectedOwner.created_at,
+                            ).toLocaleDateString()
                           : "-"}
                       </p>
                     </div>
@@ -1144,14 +1063,10 @@ export default function OwnerManagement() {
         </DialogContent>
       </Dialog>
 
-
       {/* ================================================= */}
       {/* DELETE CONFIRMATION */}
       {/* ================================================= */}
-      <AlertDialog
-        open={deleteDialogOpen}
-        onOpenChange={setDeleteDialogOpen}
-      >
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent className="rounded-2xl border-stone-200">
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Store Owner?</AlertDialogTitle>
@@ -1160,14 +1075,13 @@ export default function OwnerManagement() {
               <span className="font-semibold text-foreground">
                 {ownerToDelete?.profiles?.full_name}
               </span>
-              ? This will remove the store owner's account and store information.
+              ? This will remove the store owner's account and store
+              information.
             </AlertDialogDescription>
           </AlertDialogHeader>
 
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={saving}>
-              Cancel
-            </AlertDialogCancel>
+            <AlertDialogCancel disabled={saving}>Cancel</AlertDialogCancel>
 
             <AlertDialogAction
               onClick={deleteOwner}
@@ -1181,5 +1095,5 @@ export default function OwnerManagement() {
         </AlertDialogContent>
       </AlertDialog>
     </div>
-  )
+  );
 }

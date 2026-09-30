@@ -105,7 +105,10 @@ function LoginButton({ size = "default", className }) {
 
 function LedgerPreview() {
   return (
-    <Card className="w-full max-w-md overflow-hidden shadow-lg" aria-hidden="true">
+    <Card
+      className="w-full max-w-md overflow-hidden shadow-lg"
+      aria-hidden="true"
+    >
       <CardHeader className="flex-row items-center justify-between space-y-0 border-b pb-3">
         <CardTitle className="text-base">Utang ledger</CardTitle>
         <Badge variant="secondary">Sample</Badge>
@@ -136,7 +139,9 @@ function LedgerPreview() {
         ))}
         <div className="flex items-center justify-between bg-muted/50 px-5 py-4">
           <span className="text-sm text-muted-foreground">Overall balance</span>
-          <span className="font-mono text-lg font-bold tabular-nums">₱3,760.00</span>
+          <span className="font-mono text-lg font-bold tabular-nums">
+            ₱3,760.00
+          </span>
         </div>
       </CardContent>
     </Card>
@@ -151,15 +156,30 @@ export default function LandingPage() {
       {/* Navbar */}
       <header className="sticky top-0 z-40 border-b bg-background/90 backdrop-blur">
         <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 sm:px-6">
-          <a href="#top" className="flex items-center gap-2 font-bold tracking-tight">
-            <img src={logo} alt="SARI-SARI" className="h-16 w-16 text-primary" />
+          <a
+            href="#top"
+            className="flex items-center gap-2 font-bold tracking-tight"
+          >
+            <img
+              src={logo}
+              alt="SARI-SARI"
+              className="h-16 w-16 text-primary"
+            />
             <a className="text-xl font-bold">SARI-SARI</a>
           </a>
           <nav className="hidden items-center gap-6 text-sm text-muted-foreground md:flex">
-            <a href="#features" className="hover:text-foreground">Features</a>
-            <a href="#how-it-works" className="hover:text-foreground">How it works</a>
-            <a href="#about" className="hover:text-foreground">About</a>
-            <a href="#faqs" className="hover:text-foreground">FAQs</a>
+            <a href="#features" className="hover:text-foreground">
+              Features
+            </a>
+            <a href="#how-it-works" className="hover:text-foreground">
+              How it works
+            </a>
+            <a href="#about" className="hover:text-foreground">
+              About
+            </a>
+            <a href="#faqs" className="hover:text-foreground">
+              FAQs
+            </a>
           </nav>
           <LoginButton />
         </div>
@@ -197,7 +217,10 @@ export default function LandingPage() {
         <Separator />
 
         {/* Key features */}
-        <section id="features" className="mx-auto max-w-6xl scroll-mt-16 px-4 py-16 sm:px-6">
+        <section
+          id="features"
+          className="mx-auto max-w-6xl scroll-mt-16 px-4 py-16 sm:px-6"
+        >
           <h2 className="text-3xl font-bold tracking-tight">Key features</h2>
           <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {FEATURES.map(({ icon: Icon, title, text }) => (
@@ -217,7 +240,10 @@ export default function LandingPage() {
         <Separator />
 
         {/* How it works */}
-        <section id="how-it-works" className="mx-auto max-w-6xl scroll-mt-16 px-4 py-16 sm:px-6">
+        <section
+          id="how-it-works"
+          className="mx-auto max-w-6xl scroll-mt-16 px-4 py-16 sm:px-6"
+        >
           <h2 className="text-3xl font-bold tracking-tight">How it works</h2>
           <ol className="mt-8 grid gap-6 md:grid-cols-3">
             {STEPS.map((step, i) => (
@@ -234,7 +260,10 @@ export default function LandingPage() {
         <Separator />
 
         {/* About */}
-        <section id="about" className="mx-auto max-w-3xl scroll-mt-16 px-4 py-16 sm:px-6">
+        <section
+          id="about"
+          className="mx-auto max-w-3xl scroll-mt-16 px-4 py-16 sm:px-6"
+        >
           <h2 className="text-3xl font-bold tracking-tight">About CCLMS</h2>
           <p className="mt-6 text-lg leading-relaxed text-muted-foreground">
             CCLMS was built to solve a problem sari-sari store owners deal with
@@ -247,7 +276,10 @@ export default function LandingPage() {
         <Separator />
 
         {/* FAQs */}
-        <section id="faqs" className="mx-auto max-w-3xl scroll-mt-16 px-4 py-16 sm:px-6">
+        <section
+          id="faqs"
+          className="mx-auto max-w-3xl scroll-mt-16 px-4 py-16 sm:px-6"
+        >
           <h2 className="text-3xl font-bold tracking-tight">FAQs</h2>
           <Accordion type="single" collapsible className="mt-6">
             {FAQS.map(({ q, a }, i) => (
@@ -275,7 +307,8 @@ export default function LandingPage() {
       </main>
 
       <footer className="border-t py-6 text-center text-sm text-muted-foreground">
-        © {new Date().getFullYear()} SARI-SARI. Customer Credit Ledger Management System.
+        © {new Date().getFullYear()} SARI-SARI. Customer Credit Ledger
+        Management System.
       </footer>
     </div>
   );

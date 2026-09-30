@@ -25,124 +25,123 @@ function LoginForm({ className, ...props }) {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [rememberMe, setRememberMe] = useState(() => Boolean(localStorage.getItem("cclms.rememberedEmail")));
+  const [rememberMe, setRememberMe] = useState(() =>
+    Boolean(localStorage.getItem("cclms.rememberedEmail")),
+  );
   const rememberedEmail = localStorage.getItem("cclms.rememberedEmail") || "";
 
   const navigate = useNavigate();
 
   async function handleSubmit(event) {
-  event.preventDefault();
-  setError("");
-  setIsLoading(true);
+    event.preventDefault();
+    setError("");
+    setIsLoading(true);
 
-  const formData = new FormData(event.currentTarget);
-  const email = formData.get("email");
-  const password = formData.get("password");
+    const formData = new FormData(event.currentTarget);
+    const email = formData.get("email");
+    const password = formData.get("password");
 
-  if (rememberMe) {
-    localStorage.setItem("cclms.rememberedEmail", email);
-  } else {
-    localStorage.removeItem("cclms.rememberedEmail");
-  }
+    if (rememberMe) {
+      localStorage.setItem("cclms.rememberedEmail", email);
+    } else {
+      localStorage.removeItem("cclms.rememberedEmail");
+    }
 
-  // Login with Supabase Auth
-  const { data, error: loginError } =
-    await supabase.auth.signInWithPassword({
+    // Login with Supabase Auth
+    const { data, error: loginError } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
 
-  if (loginError) {
-    setError(loginError.message);
-    setIsLoading(false);
-    return;
-  }
+    if (loginError) {
+      setError(loginError.message);
+      setIsLoading(false);
+      return;
+    }
 
-  // Make sure we received a user
-  if (!data?.user) {
-    setError("Unable to retrieve your account.");
-    setIsLoading(false);
-    return;
-  }
+    // Make sure we received a user
+    if (!data?.user) {
+      setError("Unable to retrieve your account.");
+      setIsLoading(false);
+      return;
+    }
 
-  // Get user's profile and role
-  const { data: profile, error: profileError } = await supabase
-    .from("profiles")
-    .select("role, full_name")
-    .eq("id", data.user.id)
-    .single();
+    // Get user's profile and role
+    const { data: profile, error: profileError } = await supabase
+      .from("profiles")
+      .select("role, full_name")
+      .eq("id", data.user.id)
+      .single();
 
-  if (profileError) {
-    console.error("Profile error:", profileError);
+    if (profileError) {
+      console.error("Profile error:", profileError);
 
-    setError("Unable to find your account profile.");
+      setError("Unable to find your account profile.");
 
-    await supabase.auth.signOut();
-    setIsLoading(false);
-    return;
-  }
+      await supabase.auth.signOut();
+      setIsLoading(false);
+      return;
+    }
 
-  console.log("Logged in user:", data.user.email);
-  console.log("User role:", profile.role);
+    console.log("Logged in user:", data.user.email);
+    console.log("User role:", profile.role);
 
-  // ============================
-  // ADMIN LOGIN
-  // ============================
-  if (profile.role === "admin") {
-    // Create ADMIN LOGIN log
-    const ipAddress = await getClientIp();
+    // ============================
+    // ADMIN LOGIN
+    // ============================
+    if (profile.role === "admin") {
+      // Create ADMIN LOGIN log
+      const ipAddress = await getClientIp();
 
-    const { error: logError } = await supabase
-      .from("admin_logs")
-      .insert({
+      const { error: logError } = await supabase.from("admin_logs").insert({
         admin_id: data.user.id,
         action: "LOGIN",
         ip_address: ipAddress,
       });
 
-    if (logError) {
-      console.error("Login log error:", logError);
+      if (logError) {
+        console.error("Login log error:", logError);
+      }
+
+      toast.success("Login successful", {
+        description: "Welcome to the admin dashboard.",
+      });
+
+      navigate("/admin", {
+        replace: true,
+      });
+
+      setIsLoading(false);
+      return;
     }
 
-    toast.success("Login successful", {
-      description: "Welcome to the admin dashboard.",
-    });
+    // ============================
+    // OWNER LOGIN
+    // ============================
+    if (profile.role === "owner") {
+      toast.success("Login successful", {
+        description: "Welcome to your owner dashboard.",
+      });
 
-    navigate("/admin", {
-      replace: true,
-    });
+      navigate("/owner", {
+        replace: true,
+      });
+
+      setIsLoading(false);
+      return;
+    }
+
+    // ============================
+    // INVALID ROLE
+    // ============================
+    console.error("Invalid user role:", profile.role);
+
+    setError("Your account has an invalid role.");
+
+    await supabase.auth.signOut();
 
     setIsLoading(false);
-    return;
   }
-
-  // ============================
-  // OWNER LOGIN
-  // ============================
-  if (profile.role === "owner") {
-    toast.success("Login successful", {
-      description: "Welcome to your owner dashboard.",
-    });
-
-    navigate("/owner", {
-      replace: true,
-    });
-
-    setIsLoading(false);
-    return;
-  }
-
-  // ============================
-  // INVALID ROLE
-  // ============================
-  console.error("Invalid user role:", profile.role);
-
-  setError("Your account has an invalid role.");
-
-  await supabase.auth.signOut();
-
-  setIsLoading(false);
-}
 
   return (
     <form
@@ -151,10 +150,8 @@ function LoginForm({ className, ...props }) {
       {...props}
     >
       <FieldGroup>
-
         {/* Header */}
         <div className="mb-4 flex flex-col items-start">
-
           <h1 className="text-3xl font-bold tracking-tight text-gray-950">
             Welcome!
           </h1>
@@ -165,7 +162,6 @@ function LoginForm({ className, ...props }) {
 
           {/* Gold Accent */}
           <div className="mt-5 h-1 w-14 rounded-full bg-[#D4A017]" />
-
         </div>
 
         {/* Email */}
@@ -265,9 +261,7 @@ function LoginForm({ className, ...props }) {
 
             <button
               type="button"
-              onClick={() =>
-                setShowPassword((previous) => !previous)
-              }
+              onClick={() => setShowPassword((previous) => !previous)}
               className="
                 absolute
                 right-4
@@ -277,11 +271,7 @@ function LoginForm({ className, ...props }) {
                 transition-colors
                 hover:text-gray-800
               "
-              aria-label={
-                showPassword
-                  ? "Hide password"
-                  : "Show password"
-              }
+              aria-label={showPassword ? "Hide password" : "Show password"}
             >
               {showPassword ? (
                 <EyeOff className="h-5 w-5" />
@@ -293,7 +283,6 @@ function LoginForm({ className, ...props }) {
 
           {/* Remember Me / Forgot Password */}
           <div className="mt-3 flex items-center justify-between gap-4">
-
             <label
               htmlFor="rememberMe"
               className="flex cursor-pointer items-center gap-2"
@@ -314,9 +303,7 @@ function LoginForm({ className, ...props }) {
                 "
               />
 
-              <span className="text-sm text-gray-600">
-                Remember me
-              </span>
+              <span className="text-sm text-gray-600">Remember me</span>
             </label>
 
             <a
@@ -332,7 +319,6 @@ function LoginForm({ className, ...props }) {
             >
               Forgot your password?
             </a>
-
           </div>
         </Field>
 
@@ -384,10 +370,7 @@ function LoginForm({ className, ...props }) {
               py-3
             "
           >
-            <p
-              className="text-sm text-red-600"
-              role="alert"
-            >
+            <p className="text-sm text-red-600" role="alert">
               {error}
             </p>
           </div>
@@ -401,7 +384,6 @@ function LoginForm({ className, ...props }) {
             © 2026 Sari-Sari • Developed by Group 4
           </FieldDescription>
         </div>
-
       </FieldGroup>
     </form>
   );
@@ -410,7 +392,6 @@ function LoginForm({ className, ...props }) {
 export default function LoginPage() {
   return (
     <div className="grid min-h-svh lg:grid-cols-2">
-
       {/* =====================================================
           LEFT SIDE - LOGIN
       ====================================================== */}
@@ -423,7 +404,6 @@ export default function LoginPage() {
           md:p-10
         "
       >
-
         <div className="flex justify-center gap-2 md:justify-start">
           <Button
             asChild
@@ -438,11 +418,9 @@ export default function LoginPage() {
         </div>
 
         <div className="flex flex-1 items-center justify-center">
-
           <div className="w-full max-w-md">
             <LoginForm />
           </div>
-
         </div>
       </div>
 
@@ -461,7 +439,6 @@ export default function LoginPage() {
           lg:justify-center
         "
       >
-
         {/* Background */}
         <div
           className="
@@ -496,7 +473,7 @@ export default function LoginPage() {
             border-[20px]
             border-[#D4AF59]/20
           "
-        /> 
+        />
 
         {/* Branding Content */}
         <div
@@ -512,7 +489,6 @@ export default function LoginPage() {
             text-center
           "
         >
-
           {/* Logo */}
           <img
             src={Logo}
@@ -528,7 +504,6 @@ export default function LoginPage() {
 
           {/* Brand */}
           <div className="relative">
-
             <span
               className="
                 absolute
@@ -571,7 +546,6 @@ export default function LoginPage() {
             >
               SARI-SARI
             </h1>
-
           </div>
 
           {/* Divider */}
@@ -604,7 +578,6 @@ export default function LoginPage() {
             <br />
             Management System
           </p>
-
         </div>
       </div>
     </div>
