@@ -152,7 +152,7 @@ export default function App() {
 
       <BrowserRouter>
 
-        <Toaster position="top-right" />
+        <Toaster position="top-center" />
 
         <Routes>
 
