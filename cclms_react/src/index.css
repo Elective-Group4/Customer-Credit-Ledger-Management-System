@@ -120,13 +120,49 @@
   .toaster {
     --normal-bg: #1E3A8A;
     --normal-text: #FFFFFF;
-    --normal-border: #3B82F6;
+    --normal-border: #1E40AF;
+    --success-bg: #1E3A8A;
+    --success-text: #FFFFFF;
+    --success-border: #1E40AF;
+    --error-bg: #1E3A8A;
+    --error-text: #FFFFFF;
+    --error-border: #1E40AF;
+    --warning-bg: #1E3A8A;
+    --warning-text: #FFFFFF;
+    --warning-border: #1E40AF;
+    --info-bg: #1E3A8A;
+    --info-text: #FFFFFF;
+    --info-border: #1E40AF;
   }
 
   .dark .toaster {
     --normal-bg: #172554;
     --normal-text: #F8FAFC;
     --normal-border: #2563EB;
+    --success-bg: #172554;
+    --success-text: #F8FAFC;
+    --success-border: #2563EB;
+    --error-bg: #172554;
+    --error-text: #F8FAFC;
+    --error-border: #2563EB;
+    --warning-bg: #172554;
+    --warning-text: #F8FAFC;
+    --warning-border: #2563EB;
+    --info-bg: #172554;
+    --info-text: #F8FAFC;
+    --info-border: #2563EB;
+  }
+
+  .toaster [data-sonner-toast][data-styled="true"] {
+    background: #1E3A8A !important;
+    border-color: #1E40AF !important;
+    color: #FFFFFF !important;
+  }
+
+  .toaster [data-sonner-toast][data-styled="true"] [data-title],
+  .toaster [data-sonner-toast][data-styled="true"] [data-description],
+  .toaster [data-sonner-toast][data-styled="true"] [data-icon] {
+    color: #FFFFFF !important;
   }
 
   /* Admin pages still use a few legacy utility colors; keep them readable in dark mode. */

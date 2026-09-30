@@ -58,7 +58,6 @@ export default function OwnerDashboard() {
 					<h1 className="text-3xl font-bold tracking-tight text-[#171717] dark:text-foreground md:text-4xl">Owner Dashboard</h1>
 					<p className="text-muted-foreground">A current view of customers, credit, and payments.</p>
 				</div>
-				<Button variant="outline" className="border-stone-200 bg-white shadow-sm dark:border-border dark:bg-card" onClick={refresh} disabled={loading}>{loading ? "Refreshing..." : "Refresh"}</Button>
 			</div>
 
 			{error && <Card className="border-destructive"><CardContent className="pt-6 text-sm text-destructive">{error}</CardContent></Card>}

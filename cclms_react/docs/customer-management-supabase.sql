@@ -102,7 +102,7 @@ begin
   end if;
 
   if not exists (
-    select 1 from pg_policies
+    select 1 from pg_policies   
     where schemaname = 'public' and tablename = 'customers' and cmd = 'INSERT'
   ) then
     create policy customers_owner_insert on public.customers
