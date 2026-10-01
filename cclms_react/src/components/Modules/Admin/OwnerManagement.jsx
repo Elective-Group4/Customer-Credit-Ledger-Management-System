@@ -13,6 +13,8 @@ import {
   Loader2,
 } from "lucide-react";
 
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 import {
@@ -127,6 +129,7 @@ export default function OwnerManagement() {
             phone_number,
             role,
             status,
+            avatar_url,
             created_at
           )
         `,
@@ -690,9 +693,15 @@ export default function OwnerManagement() {
                       >
                         <TableCell className="px-5 py-4 md:px-6">
                           <div className="flex items-center gap-3">
-                            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#F5EEE9] text-xs font-bold text-[#8B4E2F]">
-                              {initials}
-                            </div>
+                            <Avatar className="h-10 w-10 shrink-0">
+                              <AvatarImage
+                                src={owner.profiles?.avatar_url || undefined}
+                                alt={ownerName}
+                              />
+                              <AvatarFallback className="bg-[#F5EEE9] text-xs font-bold text-[#8B4E2F]">
+                                {initials}
+                              </AvatarFallback>
+                            </Avatar>
                             <div className="min-w-0">
                               <p className="truncate text-sm font-semibold text-[#171717]">
                                 {ownerName}
@@ -980,11 +989,17 @@ export default function OwnerManagement() {
 
                 <div className="relative px-6 pb-6">
                   <div className="-mt-10 flex items-end justify-between">
-                    <div className="flex h-20 w-20 items-center justify-center rounded-2xl border-4 border-white bg-[#F5EEE9] text-2xl font-bold text-[#8B4E2F] shadow-sm dark:border-card dark:bg-[#8B4E2F]/20 dark:text-[#D9A66A]">
-                      {selectedOwner.profiles?.full_name
-                        ?.charAt(0)
-                        .toUpperCase() || "?"}
-                    </div>
+                    <Avatar className="h-20 w-20 rounded-2xl border-4 border-white shadow-sm dark:border-card">
+                      <AvatarImage
+                        src={selectedOwner.profiles?.avatar_url || undefined}
+                        alt={selectedOwner.profiles?.full_name || "Store owner"}
+                      />
+                      <AvatarFallback className="rounded-xl bg-[#F5EEE9] text-2xl font-bold text-[#8B4E2F] dark:bg-[#8B4E2F]/20 dark:text-[#D9A66A]">
+                        {selectedOwner.profiles?.full_name
+                          ?.charAt(0)
+                          .toUpperCase() || "?"}
+                      </AvatarFallback>
+                    </Avatar>
 
                     <span
                       className={`mb-2 inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold capitalize ${
