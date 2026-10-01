@@ -52,7 +52,6 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { Separator } from "@/components/ui/separator";
 import {
   Card,
   CardContent,
@@ -81,199 +80,19 @@ import {
 } from "@/components/ui/alert-dialog";
 
 import { supabase } from "@/lib/supabase";
-
-export const ICONS = {
-  UserPlus,
-  ReceiptText,
-  HandCoins,
-  LayoutDashboard,
-  History,
-  Smartphone,
-  NotebookPen,
-  Users,
-  Package,
-  ShoppingCart,
-  Wallet,
-  BarChart3,
-  FileSpreadsheet,
-  ShieldCheck,
-  Lock,
-  Bell,
-  Search,
-  Store,
-  Clock,
-  CheckCircle2,
-  Star,
-  Heart,
-  Zap,
-  Globe,
-  Mail,
-  Phone,
-  Settings,
-  Download,
-  Calculator,
-  Tag,
-};
-
-export const getIcon = (name) => ICONS[name] ?? Star;
-
-const TABLE = "landing_page_content";
-const ROW_ID = 1;
+import { getClientIp } from "@/lib/client-ip";
+import {
+  getIcon,
+  ICONS,
+  LANDING_PAGE_ROW_ID,
+  LANDING_PAGE_TABLE,
+  withDefaults,
+} from "@/lib/landing-content";
 
 const uid = () =>
   typeof crypto !== "undefined" && crypto.randomUUID
     ? crypto.randomUUID()
     : `id-${Date.now()}-${Math.random().toString(16).slice(2)}`;
-
-export const DEFAULT_CONTENT = {
-  brand: { name: "SARI-SARI", loginLabel: "Log In" },
-  hero: {
-    badge: "Customer Credit Ledger Management System",
-    title: "Replace your utang notebook with a digital ledger.",
-    description:
-      "CCLMS replaces the handwritten notebook sari-sari store owners use to track customer utang with a simple, web-based ledger. Record credit by product code, accept partial payments, and see every customer's running balance instantly, right from your phone at the counter.",
-    note: "Owner accounts are created by your system admin.",
-  },
-  features: {
-    heading: "Key features",
-    items: [
-      {
-        id: "f1",
-        icon: "UserPlus",
-        title: "Customer records",
-        text: "Add customers with auto-generated IDs.",
-      },
-      {
-        id: "f2",
-        icon: "ReceiptText",
-        title: "Quick credit recording",
-        text: "Add items by product ID code and quantity.",
-      },
-      {
-        id: "f3",
-        icon: "HandCoins",
-        title: "Partial payments",
-        text: "Record bayad any time, and the balance updates automatically.",
-      },
-      {
-        id: "f4",
-        icon: "LayoutDashboard",
-        title: "Dashboard",
-        text: "See the overall balance, charts, and a ranking of customers by credit.",
-      },
-      {
-        id: "f5",
-        icon: "History",
-        title: "Transaction history",
-        text: "Keep full records you can export.",
-      },
-    ],
-    footnote: {
-      icon: "Smartphone",
-      text: "Works on phones and desktop browsers, right at the counter.",
-    },
-  },
-  steps: {
-    heading: "How it works",
-    items: [
-      { id: "s1", text: "Add your products and customers" },
-      { id: "s2", text: "Record credit and payments as they happen" },
-      { id: "s3", text: "Check your dashboard for balances and top debtors" },
-    ],
-  },
-  about: {
-    heading: "About CCLMS",
-    text: "CCLMS was built to solve a problem sari-sari store owners deal with every day: keeping track of who owes what, without relying on a notebook that's easy to lose or hard to search. It's designed around real small-business needs rather than as a generic demo app.",
-  },
-  faqs: {
-    heading: "FAQs",
-    items: [
-      {
-        id: "q1",
-        q: "What is CCLMS?",
-        a: "A web-based tool that helps sari-sari store owners digitally track customer utang (credit) and bayad (payments), replacing manual notebook tracking.",
-      },
-      {
-        id: "q2",
-        q: "Who can use this system?",
-        a: "Only registered store owners and system admins. Owner accounts are created by the admin, and customers are recorded in the system but don't log in themselves.",
-      },
-      {
-        id: "q3",
-        q: "Is my store's data secure?",
-        a: "Yes. Passwords are protected, and each store owner can only see their own store's data.",
-      },
-      {
-        id: "q4",
-        q: "Can customers pay in parts?",
-        a: "Yes. You can record a partial payment at any time, and the customer's balance updates automatically.",
-      },
-      {
-        id: "q5",
-        q: "What if I forget my password?",
-        a: "You can reset it using your email and a one-time code (OTP).",
-      },
-      {
-        id: "q6",
-        q: "Does this work on my phone?",
-        a: "Yes. It works on phones and desktop browsers, so you can use it right at the counter.",
-      },
-    ],
-  },
-  cta: { heading: "Ready to put your ledger online?" },
-  footer: { text: "Customer Credit Ledger Management System." },
-};
-
-const withDefaults = (saved) => {
-  if (!saved) return structuredClone(DEFAULT_CONTENT);
-  const d = DEFAULT_CONTENT;
-  return {
-    brand: { ...d.brand, ...saved.brand },
-    hero: { ...d.hero, ...saved.hero },
-    features: {
-      ...d.features,
-      ...saved.features,
-      items: saved.features?.items ?? d.features.items,
-      footnote: { ...d.features.footnote, ...saved.features?.footnote },
-    },
-    steps: {
-      ...d.steps,
-      ...saved.steps,
-      items: saved.steps?.items ?? d.steps.items,
-    },
-    about: { ...d.about, ...saved.about },
-    faqs: {
-      ...d.faqs,
-      ...saved.faqs,
-      items: saved.faqs?.items ?? d.faqs.items,
-    },
-    cta: { ...d.cta, ...saved.cta },
-    footer: { ...d.footer, ...saved.footer },
-  };
-};
-
-export function useLandingContent() {
-  const [content, setContent] = useState(() => withDefaults(null));
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    let active = true;
-    supabase
-      .from(TABLE)
-      .select("content")
-      .eq("id", ROW_ID)
-      .maybeSingle()
-      .then(({ data }) => {
-        if (active) setContent(withDefaults(data?.content));
-      })
-      .finally(() => active && setLoading(false));
-    return () => {
-      active = false;
-    };
-  }, []);
-
-  return { content, loading };
-}
 
 function IconPicker({ value, onChange, id }) {
   const Current = getIcon(value);
@@ -349,7 +168,10 @@ function ItemToolbar({ index, total, onMove, onRemove, label }) {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={() => onRemove(index)}>
+            <AlertDialogAction
+              className="!bg-destructive !text-white hover:!bg-destructive/90"
+              onClick={() => onRemove(index)}
+            >
               Delete
             </AlertDialogAction>
           </AlertDialogFooter>
@@ -586,9 +408,9 @@ export default function LandingPageManagement() {
     let active = true;
     (async () => {
       const { data, error } = await supabase
-        .from(TABLE)
+        .from(LANDING_PAGE_TABLE)
         .select("content")
-        .eq("id", ROW_ID)
+        .eq("id", LANDING_PAGE_ROW_ID)
         .maybeSingle();
       if (!active) return;
       if (error) toast.error("Could not load landing page content.");
@@ -614,15 +436,6 @@ export default function LandingPageManagement() {
 
   const setField = useCallback((section, field, value) => {
     setContent((c) => ({ ...c, [section]: { ...c[section], [field]: value } }));
-  }, []);
-  const setFootnote = useCallback((field, value) => {
-    setContent((c) => ({
-      ...c,
-      features: {
-        ...c.features,
-        footnote: { ...c.features.footnote, [field]: value },
-      },
-    }));
   }, []);
   const updateItem = useCallback((section, index, patch) => {
     setContent((c) => ({
@@ -665,12 +478,48 @@ export default function LandingPageManagement() {
 
   const handleSave = async () => {
     setSaving(true);
-    const { error } = await supabase
-      .from(TABLE)
-      .upsert({ id: ROW_ID, content, updated_at: new Date().toISOString() });
+    const { error } = await supabase.from(LANDING_PAGE_TABLE).upsert({
+      id: LANDING_PAGE_ROW_ID,
+      content,
+      updated_at: new Date().toISOString(),
+    });
+    if (error) {
+      setSaving(false);
+      toast.error("Could not save changes. Please try again.");
+      return;
+    }
+
+    const {
+      data: { user },
+      error: userError,
+    } = await supabase.auth.getUser();
+
+    if (userError || !user) {
+      setSaving(false);
+      setSaved(JSON.stringify(content));
+      toast.error(
+        "Landing page saved, but the activity log could not be recorded.",
+      );
+      return;
+    }
+
+    const { error: logError } = await supabase.from("admin_logs").insert({
+      admin_id: user.id,
+      action: "LANDING_PAGE_UPDATE",
+      target_name: "Landing Page",
+      ip_address: await getClientIp(),
+    });
+
     setSaving(false);
-    if (error) return toast.error("Could not save changes. Please try again.");
     setSaved(JSON.stringify(content));
+
+    if (logError) {
+      toast.error(
+        "Landing page saved, but the activity log could not be recorded.",
+      );
+      return;
+    }
+
     toast.success("Landing page updated.");
   };
   const handleDiscard = () => {
@@ -957,30 +806,6 @@ export default function LandingPageManagement() {
                 );
               })}
             </div>
-
-            <SectionCard
-              icon={Zap}
-              title="Highlight card"
-              description="The dashed card shown after the feature cards."
-              className="border-dashed"
-            >
-              <div className="grid gap-4 md:grid-cols-[220px_1fr]">
-                <Field label="Icon" htmlFor="footnote-icon">
-                  <IconPicker
-                    id="footnote-icon"
-                    value={features.footnote.icon}
-                    onChange={(v) => setFootnote("icon", v)}
-                  />
-                </Field>
-                <Field label="Text" htmlFor="footnote-text">
-                  <Input
-                    id="footnote-text"
-                    value={features.footnote.text}
-                    onChange={(e) => setFootnote("text", e.target.value)}
-                  />
-                </Field>
-              </div>
-            </SectionCard>
           </TabsContent>
 
           <TabsContent value="steps" className="mt-0 space-y-5">

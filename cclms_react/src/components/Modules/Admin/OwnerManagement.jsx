@@ -69,6 +69,22 @@ import { Label } from "@/components/ui/label";
 
 import { toast } from "sonner";
 
+const phoneNumberPattern = /^\+63 9\d{9}$/;
+
+function formatPhoneNumber(value) {
+  const digits = value.replace(/\D/g, "");
+
+  if (/^09\d{9}$/.test(digits)) {
+    return `+63 ${digits.slice(1)}`;
+  }
+
+  if (/^639\d{9}$/.test(digits)) {
+    return `+63 ${digits.slice(2)}`;
+  }
+
+  return value.trim();
+}
+
 export default function OwnerManagement() {
   // =====================================================
   // STATE
@@ -246,6 +262,15 @@ export default function OwnerManagement() {
       return;
     }
 
+    const phoneNumber = formatPhoneNumber(form.phone_number);
+
+    if (!phoneNumberPattern.test(phoneNumber)) {
+      toast.error("Enter a valid Philippine mobile number", {
+        description: "Use +63 9123456789 or enter an 11-digit number.",
+      });
+      return;
+    }
+
     if (!form.phone_number.trim()) {
       toast.error("Phone number is required");
       return;
@@ -287,7 +312,7 @@ export default function OwnerManagement() {
           full_name: form.full_name.trim(),
           email: form.email.trim(),
           password: form.password,
-          phone_number: form.phone_number.trim(),
+          phone_number: phoneNumber,
           store_name: form.store_name.trim(),
           branch: form.branch.trim(),
           status: form.status,
@@ -353,6 +378,15 @@ export default function OwnerManagement() {
       return;
     }
 
+    const phoneNumber = formatPhoneNumber(form.phone_number);
+
+    if (!phoneNumberPattern.test(phoneNumber)) {
+      toast.error("Enter a valid Philippine mobile number", {
+        description: "Use +63 9123456789 or enter an 11-digit number.",
+      });
+      return;
+    }
+
     if (!form.phone_number.trim()) {
       toast.error("Phone number is required");
       return;
@@ -378,7 +412,7 @@ export default function OwnerManagement() {
           store_owner_id: editingOwner.id,
           full_name: form.full_name.trim(),
           email: form.email.trim(),
-          phone_number: form.phone_number.trim(),
+          phone_number: phoneNumber,
           store_name: form.store_name.trim(),
           branch: form.branch.trim(),
           status: form.status,
@@ -893,11 +927,25 @@ export default function OwnerManagement() {
                   id="phone_number"
                   value={form.phone_number}
                   onChange={(event) =>
-                    handleChange("phone_number", event.target.value)
+                    handleChange(
+                      "phone_number",
+                      event.target.value.replace(/[^\d+ ]/g, "").slice(0, 14),
+                    )
                   }
-                  placeholder="09171234567"
+                  onBlur={() =>
+                    handleChange(
+                      "phone_number",
+                      formatPhoneNumber(form.phone_number),
+                    )
+                  }
+                  inputMode="tel"
+                  maxLength={14}
+                  placeholder="+63 9123456789"
                   className="h-10 border-stone-200 focus-visible:ring-[#8B4E2F]/30 dark:border-border dark:bg-background"
                 />
+                <p className="text-xs text-muted-foreground">
+                  Format: +63 9123456789
+                </p>
               </div>
 
               <div className="grid gap-2">

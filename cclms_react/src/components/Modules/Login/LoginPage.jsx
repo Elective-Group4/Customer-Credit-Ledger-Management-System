@@ -202,6 +202,7 @@ function LoginForm({ className, ...props }) {
                 pl-12
                 pr-4
                 text-base
+                text-gray-900
                 shadow-none
                 transition
                 placeholder:text-gray-400
@@ -250,6 +251,7 @@ function LoginForm({ className, ...props }) {
                 pl-12
                 pr-12
                 text-base
+                text-gray-900
                 shadow-none
                 transition
                 placeholder:text-gray-400
@@ -303,7 +305,7 @@ function LoginForm({ className, ...props }) {
                 "
               />
 
-              <span className="text-sm text-gray-600">Remember me</span>
+              <span className="text-sm text-gray-900">Remember me</span>
             </label>
 
             <a
@@ -391,7 +393,7 @@ function LoginForm({ className, ...props }) {
 
 export default function LoginPage() {
   return (
-    <div className="grid min-h-svh lg:grid-cols-2">
+    <div className="login-page grid min-h-svh lg:grid-cols-2">
       {/* =====================================================
           LEFT SIDE - LOGIN
       ====================================================== */}
