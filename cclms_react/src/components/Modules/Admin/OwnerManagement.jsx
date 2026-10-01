@@ -85,6 +85,28 @@ function formatPhoneNumber(value) {
   return value.trim();
 }
 
+async function invokeAdminAction(body) {
+  const {
+    data: { session },
+    error: sessionError,
+  } = await supabase.auth.getSession();
+
+  if (sessionError) {
+    throw sessionError;
+  }
+
+  if (!session?.access_token) {
+    throw new Error("No active admin session. Please log in again.");
+  }
+
+  return supabase.functions.invoke("smart-action", {
+    body,
+    headers: {
+      Authorization: `Bearer ${session.access_token}`,
+    },
+  });
+}
+
 export default function OwnerManagement() {
   // =====================================================
   // STATE
@@ -176,6 +198,45 @@ export default function OwnerManagement() {
 
   useEffect(() => {
     fetchOwners();
+  }, []);
+
+  useEffect(() => {
+    const channel = supabase
+      .channel("admin-owner-profile-status")
+      .on(
+        "postgres_changes",
+        {
+          event: "UPDATE",
+          schema: "public",
+          table: "profiles",
+          filter: "role=eq.owner",
+        },
+        (payload) => {
+          const profile = payload.new;
+
+          setOwners((previousOwners) =>
+            previousOwners.map((owner) =>
+              owner.profile_id === profile.id
+                ? { ...owner, profiles: { ...owner.profiles, ...profile } }
+                : owner,
+            ),
+          );
+
+          setSelectedOwner((previousOwner) =>
+            previousOwner?.profile_id === profile.id
+              ? {
+                  ...previousOwner,
+                  profiles: { ...previousOwner.profiles, ...profile },
+                }
+              : previousOwner,
+          );
+        },
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   // =====================================================
@@ -289,35 +350,17 @@ export default function OwnerManagement() {
     try {
       setSaving(true);
 
-      const {
-        data: { session },
-        error: sessionError,
-      } = await supabase.auth.getSession();
-
-      console.log("Current session:", session);
-      console.log("Has access token:", !!session?.access_token);
-
-      if (sessionError) {
-        throw sessionError;
-      }
-
-      if (!session) {
-        throw new Error("No active admin session. Please log in again.");
-      }
-
       const ipAddress = await getClientIp();
 
-      const { data, error } = await supabase.functions.invoke("smart-action", {
-        body: {
-          full_name: form.full_name.trim(),
-          email: form.email.trim(),
-          password: form.password,
-          phone_number: phoneNumber,
-          store_name: form.store_name.trim(),
-          branch: form.branch.trim(),
-          status: form.status,
-          ip_address: ipAddress,
-        },
+      const { data, error } = await invokeAdminAction({
+        full_name: form.full_name.trim(),
+        email: form.email.trim(),
+        password: form.password,
+        phone_number: phoneNumber,
+        store_name: form.store_name.trim(),
+        branch: form.branch.trim(),
+        status: form.status,
+        ip_address: ipAddress,
       });
 
       console.log("Function data:", data);
@@ -405,18 +448,16 @@ export default function OwnerManagement() {
     try {
       setSaving(true);
 
-      const { data, error } = await supabase.functions.invoke("smart-action", {
-        body: {
-          action: "update_owner",
-          profile_id: editingOwner.profile_id,
-          store_owner_id: editingOwner.id,
-          full_name: form.full_name.trim(),
-          email: form.email.trim(),
-          phone_number: phoneNumber,
-          store_name: form.store_name.trim(),
-          branch: form.branch.trim(),
-          status: form.status,
-        },
+      const { data, error } = await invokeAdminAction({
+        action: "update_owner",
+        profile_id: editingOwner.profile_id,
+        store_owner_id: editingOwner.id,
+        full_name: form.full_name.trim(),
+        email: form.email.trim(),
+        phone_number: phoneNumber,
+        store_name: form.store_name.trim(),
+        branch: form.branch.trim(),
+        status: form.status,
       });
 
       if (error) {
@@ -427,6 +468,26 @@ export default function OwnerManagement() {
         throw new Error(data?.message || "Failed to update store owner");
       }
 
+      const updatedProfile = {
+        full_name: form.full_name.trim(),
+        email: form.email.trim(),
+        phone_number: phoneNumber,
+        status: form.status,
+      };
+
+      setOwners((previousOwners) =>
+        previousOwners.map((owner) =>
+          owner.profile_id === editingOwner.profile_id
+            ? {
+                ...owner,
+                profiles: { ...owner.profiles, ...updatedProfile },
+                store_name: form.store_name.trim(),
+                branch: form.branch.trim(),
+              }
+            : owner,
+        ),
+      );
+
       toast.success("Store owner updated successfully");
 
       setDialogOpen(false);
@@ -434,8 +495,6 @@ export default function OwnerManagement() {
       setEditingOwner(null);
 
       resetForm();
-
-      await fetchOwners();
     } catch (error) {
       console.error("EDIT OWNER ERROR:", {
         code: error?.code,
@@ -475,12 +534,10 @@ export default function OwnerManagement() {
     try {
       setSaving(true);
 
-      const { data, error } = await supabase.functions.invoke("smart-action", {
-        body: {
-          action: "delete_owner",
-          profile_id: ownerToDelete.profile_id,
-          store_owner_id: ownerToDelete.id,
-        },
+      const { data, error } = await invokeAdminAction({
+        action: "delete_owner",
+        profile_id: ownerToDelete.profile_id,
+        store_owner_id: ownerToDelete.id,
       });
 
       if (error) {

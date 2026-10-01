@@ -121,6 +121,34 @@ export default function AdminDashboard() {
     fetchDashboardData();
   }, [fetchDashboardData]);
 
+  React.useEffect(() => {
+    const channel = supabase
+      .channel("admin-dashboard-owner-status")
+      .on(
+        "postgres_changes",
+        {
+          event: "UPDATE",
+          schema: "public",
+          table: "profiles",
+          filter: "role=eq.owner",
+        },
+        (payload) => {
+          const profile = payload.new;
+
+          setOwners((previousOwners) =>
+            previousOwners.map((owner) =>
+              owner.id === profile.id ? { ...owner, ...profile } : owner,
+            ),
+          );
+        },
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, []);
+
   // ==============================
   // OWNER STATISTICS
   // ==============================

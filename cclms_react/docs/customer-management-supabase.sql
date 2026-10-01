@@ -109,6 +109,7 @@ as $$
   join public.profiles p on p.id = so.profile_id
   where so.profile_id = auth.uid()
     and p.role = 'owner'
+    and p.status = 'active'
   limit 1;
 $$;
 

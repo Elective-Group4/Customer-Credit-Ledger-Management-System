@@ -6,8 +6,11 @@ import {
   SidebarTrigger,
 } from "@/components/ui/sidebar";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { useOwnerAccessGuard } from "@/hooks/use-owner-access-guard";
 
 export default function OwnerLayout() {
+  useOwnerAccessGuard();
+
   return (
     <SidebarProvider>
       <OwnerSidebar />

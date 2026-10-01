@@ -29,8 +29,9 @@ Deno.serve(async (request) => {
     const supabaseUrl = Deno.env.get("SUPABASE_URL");
     const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
     const authorization = request.headers.get("Authorization");
+    const accessToken = authorization?.replace(/^Bearer\s+/i, "").trim();
 
-    if (!supabaseUrl || !serviceRoleKey || !authorization) {
+    if (!supabaseUrl || !serviceRoleKey || !accessToken) {
       return response(
         {
           success: false,
@@ -41,7 +42,6 @@ Deno.serve(async (request) => {
     }
 
     const adminClient = createClient(supabaseUrl, serviceRoleKey, {
-      global: { headers: { Authorization: authorization } },
       auth: { autoRefreshToken: false, persistSession: false },
     });
     const serviceClient = createClient(supabaseUrl, serviceRoleKey, {
@@ -51,18 +51,47 @@ Deno.serve(async (request) => {
     const {
       data: { user: adminUser },
       error: userError,
-    } = await adminClient.auth.getUser();
+    } = await adminClient.auth.getUser(accessToken);
+    console.log("smart-action authenticated user:", adminUser?.id);
     if (userError || !adminUser) {
+      console.error("smart-action authentication failed:", {
+        message: userError?.message,
+        code: userError?.code,
+      });
       return response({ success: false, message: "Unauthorized" }, 401);
     }
 
     const { data: adminProfile, error: profileError } = await serviceClient
       .from("profiles")
-      .select("role")
+      .select("role, status")
       .eq("id", adminUser.id)
-      .single();
+      .maybeSingle();
 
-    if (profileError || adminProfile?.role !== "admin") {
+    console.log("smart-action admin profile:", {
+      userId: adminUser.id,
+      role: adminProfile?.role,
+      status: adminProfile?.status,
+      errorCode: profileError?.code,
+      errorMessage: profileError?.message,
+    });
+
+    if (profileError) {
+      console.error("smart-action admin profile verification failed:", {
+        userId: adminUser.id,
+        code: profileError.code,
+        message: profileError.message,
+      });
+      return response(
+        { success: false, message: "Unable to verify administrator access" },
+        500,
+      );
+    }
+
+    if (
+      !adminProfile ||
+      adminProfile.role !== "admin" ||
+      adminProfile.status !== "active"
+    ) {
       return response(
         { success: false, message: "Admin access required" },
         403,
