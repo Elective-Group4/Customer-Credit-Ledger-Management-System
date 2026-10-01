@@ -1,13 +1,5 @@
 import { Link } from "react-router-dom";
-import {
-  UserPlus,
-  ReceiptText,
-  HandCoins,
-  LayoutDashboard,
-  History,
-  Smartphone,
-  NotebookPen,
-} from "lucide-react";
+import { getIcon, useLandingContent } from "@/lib/landing-content";
 
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -21,70 +13,7 @@ import {
 } from "@/components/ui/accordion";
 import logo from "@/assets/images/logo_sarisari.png";
 
-/* ---------- Content (edit here, not in the JSX) ---------- */
-
 const LOGIN_PATH = "/login"; // change to your actual login route
-
-const FEATURES = [
-  {
-    icon: UserPlus,
-    title: "Customer records",
-    text: "Add customers with auto-generated IDs.",
-  },
-  {
-    icon: ReceiptText,
-    title: "Quick credit recording",
-    text: "Add items by product ID code and quantity.",
-  },
-  {
-    icon: HandCoins,
-    title: "Partial payments",
-    text: "Record bayad any time, and the balance updates automatically.",
-  },
-  {
-    icon: LayoutDashboard,
-    title: "Dashboard",
-    text: "See the overall balance, charts, and a ranking of customers by credit.",
-  },
-  {
-    icon: History,
-    title: "Transaction history",
-    text: "Keep full records you can export.",
-  },
-];
-
-const STEPS = [
-  "Add your products and customers",
-  "Record credit and payments as they happen",
-  "Check your dashboard for balances and top debtors",
-];
-
-const FAQS = [
-  {
-    q: "What is CCLMS?",
-    a: "A web-based tool that helps sari-sari store owners digitally track customer utang (credit) and bayad (payments), replacing manual notebook tracking.",
-  },
-  {
-    q: "Who can use this system?",
-    a: "Only registered store owners and system admins. Owner accounts are created by the admin, and customers are recorded in the system but don't log in themselves.",
-  },
-  {
-    q: "Is my store's data secure?",
-    a: "Yes. Passwords are protected, and each store owner can only see their own store's data.",
-  },
-  {
-    q: "Can customers pay in parts?",
-    a: "Yes. You can record a partial payment at any time, and the customer's balance updates automatically.",
-  },
-  {
-    q: "What if I forget my password?",
-    a: "You can reset it using your email and a one-time code (OTP).",
-  },
-  {
-    q: "Does this work on my phone?",
-    a: "Yes. It works on phones and desktop browsers, so you can use it right at the counter.",
-  },
-];
 
 // Illustration only: shows what a ledger looks like. Not real data.
 const SAMPLE_LEDGER = [
@@ -95,10 +24,10 @@ const SAMPLE_LEDGER = [
 
 /* ---------- Small pieces ---------- */
 
-function LoginButton({ size = "default", className }) {
+function LoginButton({ label, size = "default", className }) {
   return (
     <Button asChild size={size} className={className}>
-      <Link to={LOGIN_PATH}>Log In</Link>
+      <Link to={LOGIN_PATH}>{label}</Link>
     </Button>
   );
 }
@@ -151,8 +80,28 @@ function LedgerPreview() {
 /* ---------- Page ---------- */
 
 export default function LandingPage() {
+  const { content, loading, error } = useLandingContent();
+
+  if (loading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        Loading...
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex min-h-screen items-center justify-center px-4 text-center">
+        Unable to load the landing page content. Please try again later.
+      </div>
+    );
+  }
+
+  const { brand, hero, features, steps, about, faqs, cta, footer } = content;
+
   return (
-    <div className="min-h-screen bg-background text-foreground">
+    <div className="landing-page min-h-screen bg-background text-foreground">
       {/* Navbar */}
       <header className="sticky top-0 z-40 border-b bg-background/90 backdrop-blur">
         <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 sm:px-6">
@@ -162,10 +111,10 @@ export default function LandingPage() {
           >
             <img
               src={logo}
-              alt="SARI-SARI"
+              alt={brand.name}
               className="h-16 w-16 text-primary"
             />
-            <a className="text-xl font-bold">SARI-SARI</a>
+            <span className="text-xl font-bold">{brand.name}</span>
           </a>
           <nav className="hidden items-center gap-6 text-sm text-muted-foreground md:flex">
             <a href="#features" className="hover:text-foreground">
@@ -181,7 +130,7 @@ export default function LandingPage() {
               FAQs
             </a>
           </nav>
-          <LoginButton />
+          <LoginButton label={brand.loginLabel} />
         </div>
       </header>
 
@@ -190,23 +139,17 @@ export default function LandingPage() {
         <section className="mx-auto grid max-w-6xl items-center gap-12 px-4 py-16 sm:px-6 md:py-24 lg:grid-cols-2">
           <div>
             <Badge variant="secondary" className="mb-4">
-              Customer Credit Ledger Management System
+              {hero.badge}
             </Badge>
             <h1 className="text-4xl font-bold tracking-tight sm:text-5xl lg:text-6xl">
-              Replace your utang notebook with a digital ledger.
+              {hero.title}
             </h1>
             <p className="mt-6 max-w-xl text-lg text-muted-foreground">
-              CCLMS replaces the handwritten notebook sari-sari store owners use
-              to track customer utang with a simple, web-based ledger. Record
-              credit by product code, accept partial payments, and see every
-              customer's running balance instantly, right from your phone at the
-              counter.
+              {hero.description}
             </p>
             <div className="mt-8 flex flex-wrap items-center gap-4">
-              <LoginButton size="lg" />
-              <p className="text-sm text-muted-foreground">
-                Owner accounts are created by your system admin.
-              </p>
+              <LoginButton label={brand.loginLabel} size="lg" />
+              <p className="text-sm text-muted-foreground">{hero.note}</p>
             </div>
           </div>
           <div className="flex justify-center lg:justify-end">
@@ -221,19 +164,24 @@ export default function LandingPage() {
           id="features"
           className="mx-auto max-w-6xl scroll-mt-16 px-4 py-16 sm:px-6"
         >
-          <h2 className="text-3xl font-bold tracking-tight">Key features</h2>
+          <h2 className="text-3xl font-bold tracking-tight">
+            {features.heading}
+          </h2>
           <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {FEATURES.map(({ icon: Icon, title, text }) => (
-              <Card key={title}>
-                <CardHeader className="pb-2">
-                  <Icon className="mb-2 h-6 w-6 text-primary" />
-                  <CardTitle className="text-lg">{title}</CardTitle>
-                </CardHeader>
-                <CardContent className="text-sm text-muted-foreground">
-                  {text}
-                </CardContent>
-              </Card>
-            ))}
+            {features.items.map((item) => {
+              const Icon = getIcon(item.icon);
+              return (
+                <Card key={item.id}>
+                  <CardHeader className="pb-2">
+                    <Icon className="mb-2 h-6 w-6 text-primary" />
+                    <CardTitle className="text-lg">{item.title}</CardTitle>
+                  </CardHeader>
+                  <CardContent className="text-sm text-muted-foreground">
+                    {item.text}
+                  </CardContent>
+                </Card>
+              );
+            })}
           </div>
         </section>
 
@@ -244,14 +192,14 @@ export default function LandingPage() {
           id="how-it-works"
           className="mx-auto max-w-6xl scroll-mt-16 px-4 py-16 sm:px-6"
         >
-          <h2 className="text-3xl font-bold tracking-tight">How it works</h2>
+          <h2 className="text-3xl font-bold tracking-tight">{steps.heading}</h2>
           <ol className="mt-8 grid gap-6 md:grid-cols-3">
-            {STEPS.map((step, i) => (
-              <li key={step} className="flex gap-4">
+            {steps.items.map((step, i) => (
+              <li key={step.id} className="flex gap-4">
                 <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary font-semibold text-primary-foreground">
                   {i + 1}
                 </span>
-                <p className="pt-2 font-medium">{step}</p>
+                <p className="pt-2 font-medium">{step.text}</p>
               </li>
             ))}
           </ol>
@@ -264,12 +212,9 @@ export default function LandingPage() {
           id="about"
           className="mx-auto max-w-3xl scroll-mt-16 px-4 py-16 sm:px-6"
         >
-          <h2 className="text-3xl font-bold tracking-tight">About CCLMS</h2>
+          <h2 className="text-3xl font-bold tracking-tight">{about.heading}</h2>
           <p className="mt-6 text-lg leading-relaxed text-muted-foreground">
-            CCLMS was built to solve a problem sari-sari store owners deal with
-            every day: keeping track of who owes what, without relying on a
-            notebook that's easy to lose or hard to search. It's designed around
-            real small-business needs rather than as a generic demo app.
+            {about.text}
           </p>
         </section>
 
@@ -280,15 +225,15 @@ export default function LandingPage() {
           id="faqs"
           className="mx-auto max-w-3xl scroll-mt-16 px-4 py-16 sm:px-6"
         >
-          <h2 className="text-3xl font-bold tracking-tight">FAQs</h2>
+          <h2 className="text-3xl font-bold tracking-tight">{faqs.heading}</h2>
           <Accordion type="single" collapsible className="mt-6">
-            {FAQS.map(({ q, a }, i) => (
-              <AccordionItem key={q} value={`faq-${i}`}>
+            {faqs.items.map((faq, i) => (
+              <AccordionItem key={faq.id} value={faq.id}>
                 <AccordionTrigger className="text-left">
-                  {i + 1}. {q}
+                  {i + 1}. {faq.q}
                 </AccordionTrigger>
                 <AccordionContent className="text-muted-foreground">
-                  {a}
+                  {faq.a}
                 </AccordionContent>
               </AccordionItem>
             ))}
@@ -298,17 +243,14 @@ export default function LandingPage() {
         {/* Closing CTA */}
         <section className="border-t bg-muted/40">
           <div className="mx-auto flex max-w-6xl flex-col items-center gap-4 px-4 py-14 text-center sm:px-6">
-            <h2 className="text-2xl font-bold tracking-tight">
-              Ready to put your ledger online?
-            </h2>
-            <LoginButton size="lg" />
+            <h2 className="text-2xl font-bold tracking-tight">{cta.heading}</h2>
+            <LoginButton label={brand.loginLabel} size="lg" />
           </div>
         </section>
       </main>
 
       <footer className="border-t py-6 text-center text-sm text-muted-foreground">
-        © {new Date().getFullYear()} SARI-SARI. Customer Credit Ledger
-        Management System.
+        © {new Date().getFullYear()} {brand.name}. {footer.text}
       </footer>
     </div>
   );

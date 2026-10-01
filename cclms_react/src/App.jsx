@@ -24,6 +24,8 @@ import TransactionHistory from "./components/Modules/StoreOwner/TransactionHisto
 import CustomerManagement from "./components/Modules/StoreOwner/CustomerManagement";
 
 import { supabase } from "./lib/supabase";
+import { OWNER_DEACTIVATED_MESSAGE } from "./hooks/use-owner-access-guard";
+import { toast } from "sonner";
 
 const queryClient = new QueryClient();
 const OwnerProfile = lazy(
@@ -50,7 +52,7 @@ function AdminRoute({ children }) {
 
       const { data: profile, error } = await supabase
         .from("profiles")
-        .select("role")
+        .select("role, status")
         .eq("id", session.user.id)
         .single();
 
@@ -66,10 +68,14 @@ function AdminRoute({ children }) {
         return;
       }
 
-      if (profile?.role === "admin") {
+      if (profile?.role === "admin" && profile?.status === "active") {
         setStatus("allowed");
       } else {
         console.log("User role is:", profile?.role);
+        console.log("Admin profile status is:", profile?.status);
+        if (profile?.role === "admin") {
+          await supabase.auth.signOut();
+        }
         setStatus("denied");
       }
     }
@@ -112,13 +118,27 @@ function OwnerRoute({ children }) {
 
       const { data: profile, error } = await supabase
         .from("profiles")
-        .select("role")
+        .select("role, status")
         .eq("id", session.user.id)
         .single();
 
+      console.log("AUTH USER:", session.user.id);
+      console.log("PROFILE ROLE:", profile?.role);
+      console.log("PROFILE STATUS:", profile?.status);
+      console.log("OWNER ROUTE PROFILE ERROR:", error);
+
       if (!mounted) return;
 
-      if (error || profile?.role !== "owner") {
+      const ownerAccessRevoked =
+        !error &&
+        (!profile || (profile.role === "owner" && profile.status !== "active"));
+
+      if (ownerAccessRevoked) {
+        await supabase.auth.signOut();
+        toast.error(OWNER_DEACTIVATED_MESSAGE);
+      }
+
+      if (error || profile?.role !== "owner" || profile?.status !== "active") {
         setStatus("denied");
         return;
       }

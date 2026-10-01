@@ -1,4 +1,4 @@
-import { supabase } from "@/lib/supabase"
+import { supabase } from "@/lib/supabase";
 
 /**
  * @typedef {import("@/lib/types/profile").OwnerProfile} OwnerProfile
@@ -7,32 +7,32 @@ import { supabase } from "@/lib/supabase"
  */
 
 async function getCurrentUser() {
-  const { data, error } = await supabase.auth.getUser()
-  if (error) throw error
-  if (!data.user) throw new Error("You are not logged in.")
-  return data.user
+  const { data, error } = await supabase.auth.getUser();
+  if (error) throw error;
+  if (!data.user) throw new Error("You are not logged in.");
+  return data.user;
 }
 
 /** @returns {Promise<OwnerProfile>} */
 export async function getCurrentOwnerProfile() {
-  const user = await getCurrentUser()
+  const user = await getCurrentUser();
   const { data, error } = await supabase
     .from("profiles")
-    .select("id, full_name, email, role, created_at")
+    .select("id, full_name, email, role, avatar_url, created_at")
     .eq("id", user.id)
-    .single()
+    .single();
 
-  if (error) throw error
+  if (error) throw error;
 
   return {
     id: data.id,
     fullName: data.full_name,
     email: data.email || user.email || "",
     role: data.role,
-    avatarUrl: null,
+    avatarUrl: data.avatar_url || null,
     createdAt: data.created_at,
     updatedAt: data.created_at,
-  }
+  };
 }
 
 /**
@@ -40,25 +40,25 @@ export async function getCurrentOwnerProfile() {
  * @returns {Promise<OwnerProfile>}
  */
 export async function updateOwnerProfile(input) {
-  const user = await getCurrentUser()
+  const user = await getCurrentUser();
   const { data, error } = await supabase
     .from("profiles")
     .update({ full_name: input.fullName })
     .eq("id", user.id)
-    .select("id, full_name, email, role, created_at")
-    .single()
+    .select("id, full_name, email, role, avatar_url, created_at")
+    .single();
 
-  if (error) throw error
+  if (error) throw error;
 
   return {
     id: data.id,
     fullName: data.full_name,
     email: data.email || user.email || "",
     role: data.role,
-    avatarUrl: null,
+    avatarUrl: data.avatar_url || null,
     createdAt: data.created_at,
     updatedAt: data.created_at,
-  }
+  };
 }
 
 /**
@@ -66,13 +66,15 @@ export async function updateOwnerProfile(input) {
  * @returns {Promise<void>}
  */
 export async function changeOwnerPassword(input) {
-  const user = await getCurrentUser()
+  const user = await getCurrentUser();
   const { error: signInError } = await supabase.auth.signInWithPassword({
     email: user.email,
     password: input.currentPassword,
-  })
-  if (signInError) throw signInError
+  });
+  if (signInError) throw signInError;
 
-  const { error } = await supabase.auth.updateUser({ password: input.newPassword })
-  if (error) throw error
+  const { error } = await supabase.auth.updateUser({
+    password: input.newPassword,
+  });
+  if (error) throw error;
 }

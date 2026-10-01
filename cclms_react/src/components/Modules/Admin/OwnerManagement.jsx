@@ -13,6 +13,8 @@ import {
   Loader2,
 } from "lucide-react";
 
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 import {
@@ -66,6 +68,44 @@ import {
 import { Label } from "@/components/ui/label";
 
 import { toast } from "sonner";
+
+const phoneNumberPattern = /^\+63 9\d{9}$/;
+
+function formatPhoneNumber(value) {
+  const digits = value.replace(/\D/g, "");
+
+  if (/^09\d{9}$/.test(digits)) {
+    return `+63 ${digits.slice(1)}`;
+  }
+
+  if (/^639\d{9}$/.test(digits)) {
+    return `+63 ${digits.slice(2)}`;
+  }
+
+  return value.trim();
+}
+
+async function invokeAdminAction(body) {
+  const {
+    data: { session },
+    error: sessionError,
+  } = await supabase.auth.getSession();
+
+  if (sessionError) {
+    throw sessionError;
+  }
+
+  if (!session?.access_token) {
+    throw new Error("No active admin session. Please log in again.");
+  }
+
+  return supabase.functions.invoke("smart-action", {
+    body,
+    headers: {
+      Authorization: `Bearer ${session.access_token}`,
+    },
+  });
+}
 
 export default function OwnerManagement() {
   // =====================================================
@@ -127,6 +167,7 @@ export default function OwnerManagement() {
             phone_number,
             role,
             status,
+            avatar_url,
             created_at
           )
         `,
@@ -157,6 +198,45 @@ export default function OwnerManagement() {
 
   useEffect(() => {
     fetchOwners();
+  }, []);
+
+  useEffect(() => {
+    const channel = supabase
+      .channel("admin-owner-profile-status")
+      .on(
+        "postgres_changes",
+        {
+          event: "UPDATE",
+          schema: "public",
+          table: "profiles",
+          filter: "role=eq.owner",
+        },
+        (payload) => {
+          const profile = payload.new;
+
+          setOwners((previousOwners) =>
+            previousOwners.map((owner) =>
+              owner.profile_id === profile.id
+                ? { ...owner, profiles: { ...owner.profiles, ...profile } }
+                : owner,
+            ),
+          );
+
+          setSelectedOwner((previousOwner) =>
+            previousOwner?.profile_id === profile.id
+              ? {
+                  ...previousOwner,
+                  profiles: { ...previousOwner.profiles, ...profile },
+                }
+              : previousOwner,
+          );
+        },
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   // =====================================================
@@ -243,6 +323,15 @@ export default function OwnerManagement() {
       return;
     }
 
+    const phoneNumber = formatPhoneNumber(form.phone_number);
+
+    if (!phoneNumberPattern.test(phoneNumber)) {
+      toast.error("Enter a valid Philippine mobile number", {
+        description: "Use +63 9123456789 or enter an 11-digit number.",
+      });
+      return;
+    }
+
     if (!form.phone_number.trim()) {
       toast.error("Phone number is required");
       return;
@@ -261,35 +350,17 @@ export default function OwnerManagement() {
     try {
       setSaving(true);
 
-      const {
-        data: { session },
-        error: sessionError,
-      } = await supabase.auth.getSession();
-
-      console.log("Current session:", session);
-      console.log("Has access token:", !!session?.access_token);
-
-      if (sessionError) {
-        throw sessionError;
-      }
-
-      if (!session) {
-        throw new Error("No active admin session. Please log in again.");
-      }
-
       const ipAddress = await getClientIp();
 
-      const { data, error } = await supabase.functions.invoke("smart-action", {
-        body: {
-          full_name: form.full_name.trim(),
-          email: form.email.trim(),
-          password: form.password,
-          phone_number: form.phone_number.trim(),
-          store_name: form.store_name.trim(),
-          branch: form.branch.trim(),
-          status: form.status,
-          ip_address: ipAddress,
-        },
+      const { data, error } = await invokeAdminAction({
+        full_name: form.full_name.trim(),
+        email: form.email.trim(),
+        password: form.password,
+        phone_number: phoneNumber,
+        store_name: form.store_name.trim(),
+        branch: form.branch.trim(),
+        status: form.status,
+        ip_address: ipAddress,
       });
 
       console.log("Function data:", data);
@@ -350,6 +421,15 @@ export default function OwnerManagement() {
       return;
     }
 
+    const phoneNumber = formatPhoneNumber(form.phone_number);
+
+    if (!phoneNumberPattern.test(phoneNumber)) {
+      toast.error("Enter a valid Philippine mobile number", {
+        description: "Use +63 9123456789 or enter an 11-digit number.",
+      });
+      return;
+    }
+
     if (!form.phone_number.trim()) {
       toast.error("Phone number is required");
       return;
@@ -368,18 +448,16 @@ export default function OwnerManagement() {
     try {
       setSaving(true);
 
-      const { data, error } = await supabase.functions.invoke("smart-action", {
-        body: {
-          action: "update_owner",
-          profile_id: editingOwner.profile_id,
-          store_owner_id: editingOwner.id,
-          full_name: form.full_name.trim(),
-          email: form.email.trim(),
-          phone_number: form.phone_number.trim(),
-          store_name: form.store_name.trim(),
-          branch: form.branch.trim(),
-          status: form.status,
-        },
+      const { data, error } = await invokeAdminAction({
+        action: "update_owner",
+        profile_id: editingOwner.profile_id,
+        store_owner_id: editingOwner.id,
+        full_name: form.full_name.trim(),
+        email: form.email.trim(),
+        phone_number: phoneNumber,
+        store_name: form.store_name.trim(),
+        branch: form.branch.trim(),
+        status: form.status,
       });
 
       if (error) {
@@ -390,6 +468,26 @@ export default function OwnerManagement() {
         throw new Error(data?.message || "Failed to update store owner");
       }
 
+      const updatedProfile = {
+        full_name: form.full_name.trim(),
+        email: form.email.trim(),
+        phone_number: phoneNumber,
+        status: form.status,
+      };
+
+      setOwners((previousOwners) =>
+        previousOwners.map((owner) =>
+          owner.profile_id === editingOwner.profile_id
+            ? {
+                ...owner,
+                profiles: { ...owner.profiles, ...updatedProfile },
+                store_name: form.store_name.trim(),
+                branch: form.branch.trim(),
+              }
+            : owner,
+        ),
+      );
+
       toast.success("Store owner updated successfully");
 
       setDialogOpen(false);
@@ -397,8 +495,6 @@ export default function OwnerManagement() {
       setEditingOwner(null);
 
       resetForm();
-
-      await fetchOwners();
     } catch (error) {
       console.error("EDIT OWNER ERROR:", {
         code: error?.code,
@@ -438,12 +534,10 @@ export default function OwnerManagement() {
     try {
       setSaving(true);
 
-      const { data, error } = await supabase.functions.invoke("smart-action", {
-        body: {
-          action: "delete_owner",
-          profile_id: ownerToDelete.profile_id,
-          store_owner_id: ownerToDelete.id,
-        },
+      const { data, error } = await invokeAdminAction({
+        action: "delete_owner",
+        profile_id: ownerToDelete.profile_id,
+        store_owner_id: ownerToDelete.id,
       });
 
       if (error) {
@@ -690,9 +784,15 @@ export default function OwnerManagement() {
                       >
                         <TableCell className="px-5 py-4 md:px-6">
                           <div className="flex items-center gap-3">
-                            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#F5EEE9] text-xs font-bold text-[#8B4E2F]">
-                              {initials}
-                            </div>
+                            <Avatar className="h-10 w-10 shrink-0">
+                              <AvatarImage
+                                src={owner.profiles?.avatar_url || undefined}
+                                alt={ownerName}
+                              />
+                              <AvatarFallback className="bg-[#F5EEE9] text-xs font-bold text-[#8B4E2F]">
+                                {initials}
+                              </AvatarFallback>
+                            </Avatar>
                             <div className="min-w-0">
                               <p className="truncate text-sm font-semibold text-[#171717]">
                                 {ownerName}
@@ -884,11 +984,25 @@ export default function OwnerManagement() {
                   id="phone_number"
                   value={form.phone_number}
                   onChange={(event) =>
-                    handleChange("phone_number", event.target.value)
+                    handleChange(
+                      "phone_number",
+                      event.target.value.replace(/[^\d+ ]/g, "").slice(0, 14),
+                    )
                   }
-                  placeholder="09171234567"
+                  onBlur={() =>
+                    handleChange(
+                      "phone_number",
+                      formatPhoneNumber(form.phone_number),
+                    )
+                  }
+                  inputMode="tel"
+                  maxLength={14}
+                  placeholder="+63 9123456789"
                   className="h-10 border-stone-200 focus-visible:ring-[#8B4E2F]/30 dark:border-border dark:bg-background"
                 />
+                <p className="text-xs text-muted-foreground">
+                  Format: +63 9123456789
+                </p>
               </div>
 
               <div className="grid gap-2">
@@ -980,11 +1094,17 @@ export default function OwnerManagement() {
 
                 <div className="relative px-6 pb-6">
                   <div className="-mt-10 flex items-end justify-between">
-                    <div className="flex h-20 w-20 items-center justify-center rounded-2xl border-4 border-white bg-[#F5EEE9] text-2xl font-bold text-[#8B4E2F] shadow-sm dark:border-card dark:bg-[#8B4E2F]/20 dark:text-[#D9A66A]">
-                      {selectedOwner.profiles?.full_name
-                        ?.charAt(0)
-                        .toUpperCase() || "?"}
-                    </div>
+                    <Avatar className="h-20 w-20 rounded-2xl border-4 border-white shadow-sm dark:border-card">
+                      <AvatarImage
+                        src={selectedOwner.profiles?.avatar_url || undefined}
+                        alt={selectedOwner.profiles?.full_name || "Store owner"}
+                      />
+                      <AvatarFallback className="rounded-xl bg-[#F5EEE9] text-2xl font-bold text-[#8B4E2F] dark:bg-[#8B4E2F]/20 dark:text-[#D9A66A]">
+                        {selectedOwner.profiles?.full_name
+                          ?.charAt(0)
+                          .toUpperCase() || "?"}
+                      </AvatarFallback>
+                    </Avatar>
 
                     <span
                       className={`mb-2 inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold capitalize ${

@@ -53,6 +53,9 @@ function LoginForm({ className, ...props }) {
       password,
     });
 
+    console.log("AUTH USER:", data?.user?.id);
+    console.log("LOGIN ERROR:", loginError);
+
     if (loginError) {
       setError(loginError.message);
       setIsLoading(false);
@@ -69,7 +72,7 @@ function LoginForm({ className, ...props }) {
     // Get user's profile and role
     const { data: profile, error: profileError } = await supabase
       .from("profiles")
-      .select("role, full_name")
+      .select("role, status, full_name")
       .eq("id", data.user.id)
       .single();
 
@@ -84,12 +87,22 @@ function LoginForm({ className, ...props }) {
     }
 
     console.log("Logged in user:", data.user.email);
-    console.log("User role:", profile.role);
+    console.log("PROFILE ROLE:", profile.role);
+    console.log("PROFILE STATUS:", profile.status);
 
     // ============================
     // ADMIN LOGIN
     // ============================
     if (profile.role === "admin") {
+      if (profile.status !== "active") {
+        await supabase.auth.signOut();
+        setError(
+          "Your administrator account is inactive. Please contact the administrator.",
+        );
+        setIsLoading(false);
+        return;
+      }
+
       // Create ADMIN LOGIN log
       const ipAddress = await getClientIp();
 
@@ -119,6 +132,15 @@ function LoginForm({ className, ...props }) {
     // OWNER LOGIN
     // ============================
     if (profile.role === "owner") {
+      if (profile.status !== "active") {
+        await supabase.auth.signOut();
+        setError(
+          "Your account has been deactivated. Please contact the administrator.",
+        );
+        setIsLoading(false);
+        return;
+      }
+
       toast.success("Login successful", {
         description: "Welcome to your owner dashboard.",
       });
@@ -202,6 +224,7 @@ function LoginForm({ className, ...props }) {
                 pl-12
                 pr-4
                 text-base
+                text-gray-900
                 shadow-none
                 transition
                 placeholder:text-gray-400
@@ -250,6 +273,7 @@ function LoginForm({ className, ...props }) {
                 pl-12
                 pr-12
                 text-base
+                text-gray-900
                 shadow-none
                 transition
                 placeholder:text-gray-400
@@ -303,7 +327,7 @@ function LoginForm({ className, ...props }) {
                 "
               />
 
-              <span className="text-sm text-gray-600">Remember me</span>
+              <span className="text-sm text-gray-900">Remember me</span>
             </label>
 
             <a
@@ -391,7 +415,7 @@ function LoginForm({ className, ...props }) {
 
 export default function LoginPage() {
   return (
-    <div className="grid min-h-svh lg:grid-cols-2">
+    <div className="login-page grid min-h-svh lg:grid-cols-2">
       {/* =====================================================
           LEFT SIDE - LOGIN
       ====================================================== */}

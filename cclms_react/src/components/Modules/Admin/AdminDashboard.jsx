@@ -6,6 +6,8 @@ import {
   UserX,
   RefreshCw,
   CalendarDays,
+  Activity,
+  BarChart3,
 } from "lucide-react";
 
 import { supabase } from "@/lib/supabase";
@@ -97,7 +99,7 @@ export default function AdminDashboard() {
 
       const { data, error } = await supabase
         .from("profiles")
-        .select("id, full_name, role, created_at")
+        .select("id, full_name, role, status, created_at")
         .eq("role", "owner")
         .order("created_at", { ascending: false });
 
@@ -119,17 +121,47 @@ export default function AdminDashboard() {
     fetchDashboardData();
   }, [fetchDashboardData]);
 
+  React.useEffect(() => {
+    const channel = supabase
+      .channel("admin-dashboard-owner-status")
+      .on(
+        "postgres_changes",
+        {
+          event: "UPDATE",
+          schema: "public",
+          table: "profiles",
+          filter: "role=eq.owner",
+        },
+        (payload) => {
+          const profile = payload.new;
+
+          setOwners((previousOwners) =>
+            previousOwners.map((owner) =>
+              owner.id === profile.id ? { ...owner, ...profile } : owner,
+            ),
+          );
+        },
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, []);
+
   // ==============================
   // OWNER STATISTICS
   // ==============================
 
   const totalOwners = owners.length;
 
-  // Currently every owner account is considered active.
-  // If a status column is added later, this can be changed.
-  const activeOwners = owners.length;
+  const activeOwners = owners.filter(
+    (owner) => (owner.status || "active").toLowerCase() === "active",
+  ).length;
 
-  const inactiveOwners = Math.max(totalOwners - activeOwners, 0);
+  const inactiveOwners = owners.filter(
+    (owner) => (owner.status || "active").toLowerCase() !== "active",
+  ).length;
 
   // ==============================
   // MONTHLY OWNER REGISTRATIONS
@@ -400,7 +432,10 @@ export default function AdminDashboard() {
 
         <Card className="border-stone-200 bg-white shadow-sm lg:col-span-2">
           <CardHeader className="border-b border-stone-100 pb-4">
-            <CardTitle className="text-lg">Owner Status</CardTitle>
+            <CardTitle className="flex items-center gap-2 text-lg">
+              <Activity className="h-4 w-4 text-[#8B4E2F]" />
+              Owner Status
+            </CardTitle>
 
             <CardDescription>
               Current distribution of owner accounts.
@@ -506,8 +541,7 @@ export default function AdminDashboard() {
 
                 <div className="border-t border-stone-100 pt-4">
                   <p className="text-xs leading-relaxed text-muted-foreground">
-                    Owner accounts are currently considered active when they are
-                    registered in the system.
+                    Status is synced from each owner account profile.
                   </p>
                 </div>
               </div>
@@ -519,7 +553,10 @@ export default function AdminDashboard() {
 
         <Card className="border-stone-200 bg-white shadow-sm lg:col-span-3">
           <CardHeader className="border-b border-stone-100 pb-4">
-            <CardTitle className="text-lg">Owner Registrations</CardTitle>
+            <CardTitle className="flex items-center gap-2 text-lg">
+              <BarChart3 className="h-4 w-4 text-[#8B4E2F]" />
+              Owner Registrations
+            </CardTitle>
 
             <CardDescription>
               Number of owners registered by month.

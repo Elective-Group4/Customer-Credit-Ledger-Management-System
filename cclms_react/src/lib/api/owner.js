@@ -28,6 +28,8 @@ async function getCurrentStoreId() {
     throw error;
   }
 
+  console.log("OWNER STORE:", data?.id);
+
   return data.id;
 }
 
