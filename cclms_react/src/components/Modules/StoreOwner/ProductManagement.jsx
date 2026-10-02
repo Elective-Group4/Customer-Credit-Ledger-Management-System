@@ -1,16 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import {
-  ImagePlus,
-  Loader2,
-  Pencil,
-  Power,
-  Plus,
-  Search,
-  Trash2,
-  X,
-} from "lucide-react";
 import { toast } from "sonner";
 
 import { useOwnerProducts } from "@/hooks/use-owner-products";
@@ -53,6 +43,20 @@ import {
 
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+
+import {
+  ImagePlus,
+  Loader2,
+  Pencil,
+  Power,
+  Plus,
+  ScanBarcode,
+  Search,
+  Trash2,
+  X,
+} from "lucide-react";
+
+import { BarcodeScannerDialog } from "@/components/modules/StoreOwner/ProductBarcodeScanner";
 
 function formatPrice(value) {
   return `PHP ${Number(value).toLocaleString("en-PH", {
@@ -160,6 +164,8 @@ export default function ProductManagement() {
   const [imageUploading, setImageUploading] = useState(false);
 
   const [imagePreview, setImagePreview] = useState(null);
+
+  const [scannerOpen, setScannerOpen] = useState(false);
 
   const {
     register,
@@ -356,6 +362,17 @@ export default function ProductManagement() {
   /**
    * Save product.
    */
+  function handleBarcodeDetected(code) {
+  setValue("idCode", code, {
+    shouldDirty: true,
+    shouldValidate: true,
+  });
+
+  setScannerOpen(false);
+
+  toast.success("Barcode scanned", { description: code });
+  }
+
   async function submitProduct(values) {
     setSaving(true);
 
@@ -739,6 +756,7 @@ export default function ProductManagement() {
                 : "Add a product to the credit catalog."}
             </DialogDescription>
           </DialogHeader>
+          
 
           <form className="grid gap-4" onSubmit={handleSubmit(submitProduct)}>
             {/* Product Image */}
@@ -809,15 +827,34 @@ export default function ProductManagement() {
             </div>
 
             {/* ID Code */}
+
             <div className="grid gap-2">
               <Label htmlFor="product-id-code">ID Code</Label>
 
-              <Input id="product-id-code" {...register("idCode")} />
+              <div className="flex gap-2">
+                <Input
+                  id="product-id-code"
+                  className="flex-1"
+                 {...register("idCode")}
+               />
+
+               <Button
+                type="button"
+                variant="outline"
+                disabled={saving || imageUploading}
+                onClick={(event) => {
+                  event.preventDefault();
+                  event.stopPropagation();
+                  setScannerOpen(true);
+                }}
+                >
+                  <ScanBarcode />
+                  Scan
+                </Button>
+              </div>
 
               {errors.idCode && (
-                <p className="text-sm text-destructive">
-                  {errors.idCode.message}
-                </p>
+                <p className="text-sm text-destructive">{errors.idCode.message}</p>
               )}
             </div>
 
@@ -868,6 +905,12 @@ export default function ProductManagement() {
               </Button>
             </DialogFooter>
           </form>
+
+            <BarcodeScannerDialog
+              open={scannerOpen}
+              onOpenChange={setScannerOpen}
+              onDetected={handleBarcodeDetected}
+            />
         </DialogContent>
       </Dialog>
 

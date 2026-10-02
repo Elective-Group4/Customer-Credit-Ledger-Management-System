@@ -1,5 +1,4 @@
 import { useMemo, useState } from "react";
-import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Pencil, Plus, Search, Trash2 } from "lucide-react";
 import { toast } from "sonner";
@@ -38,6 +37,16 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
+import { Controller, useForm } from "react-hook-form";
+
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+
 export default function CustomerManagement() {
   const { customers, loading, error, refresh } = useOwnerCustomers();
   const [search, setSearch] = useState("");
@@ -50,11 +59,12 @@ export default function CustomerManagement() {
   const {
     register,
     reset,
+    control,
     handleSubmit,
     formState: { errors },
   } = useForm({
     resolver: zodResolver(customerSchema),
-    defaultValues: { customerCode: "", name: "", phoneNumber: "", address: "" },
+    defaultValues: { customerCode: "", name: "", phoneNumber: "", address: "", status: "active" },
   });
   const filteredCustomers = useMemo(() => {
     const query = search.trim().toLowerCase();
@@ -75,6 +85,7 @@ export default function CustomerManagement() {
       name: "",
       phoneNumber: "",
       address: "",
+      status: "active",
     });
 
     setDialogOpen(true);
@@ -87,6 +98,7 @@ export default function CustomerManagement() {
       name: customer.name,
       phoneNumber: customer.phoneNumber,
       address: customer.address,
+      status: customer.status || "active",
     });
     setDialogOpen(true);
   }
@@ -157,8 +169,12 @@ export default function CustomerManagement() {
       header: "Status",
       cell: (row) => (
         <Badge
-          className="bg-green-400/70"
-          variant={row.status === "active" ? "default" : "secondary"}
+        className={
+          row.status === "active"
+          ? "bg-green-400/70"
+          : "bg-muted text-muted-foreground"
+        }
+        variant={row.status === "active" ? "default" : "secondary"}
         >
           {row.status}
         </Badge>
@@ -186,6 +202,7 @@ export default function CustomerManagement() {
             <Pencil />
           </Button>
           <Button
+            className="bg-red-400 text-white hover:bg-red-600"
             variant="ghost"
             size="icon"
             title={`Delete ${row.name}`}
@@ -312,6 +329,38 @@ export default function CustomerManagement() {
                 </p>
               )}
             </div>
+
+            <div className="grid gap-2">
+              <Label htmlFor="customer-status">Status</Label>
+
+              <Controller
+                name="status"
+                control={control}
+                render={({ field }) => (
+                <Select value={field.value} onValueChange={field.onChange}>
+                  <SelectTrigger
+                    id="customer-status"
+                    className={cn(
+                      "h-10 border-stone-200 focus:ring-[#8B4E2F]/30 dark:border-border dark:bg-background",
+                      field.value === "inactive" &&
+                      "bg-muted text-muted-foreground dark:bg-muted",
+                  )}>   
+                  <SelectValue placeholder="Select status" />
+                </SelectTrigger>
+
+                <SelectContent>
+                  <SelectItem value="active">Active</SelectItem>
+                  <SelectItem value="inactive">Inactive</SelectItem>
+                </SelectContent>
+              </Select>
+               )}
+              />
+
+              {errors.status && (
+                <p className="text-sm text-destructive">{errors.status.message}</p>
+              )}
+            </div>
+
             <DialogFooter>
               <Button
                 type="button"

@@ -277,7 +277,7 @@ export const ownerApi = {
         name: input.name,
         phone_number: input.phoneNumber || null,
         address: input.address || null,
-        status: "active",
+        status: input.status || "active",
       })
       .select("id, customer_code")
       .single();
@@ -314,6 +314,7 @@ export const ownerApi = {
         name: input.name,
         phone_number: input.phoneNumber || null,
         address: input.address || null,
+        status: input.status,
         updated_at: new Date().toISOString(),
       })
       .eq("id", id);
