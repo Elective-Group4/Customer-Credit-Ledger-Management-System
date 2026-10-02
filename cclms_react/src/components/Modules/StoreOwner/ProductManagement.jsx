@@ -56,7 +56,7 @@ import {
   X,
 } from "lucide-react";
 
-import { BarcodeScannerDialog } from "@/components/modules/StoreOwner/ProductBarcodeScanner";
+import { BarcodeScannerDialog } from "@/components/Modules/StoreOwner/ProductBarcodeScanner";
 
 function formatPrice(value) {
   return `PHP ${Number(value).toLocaleString("en-PH", {
@@ -363,14 +363,14 @@ export default function ProductManagement() {
    * Save product.
    */
   function handleBarcodeDetected(code) {
-  setValue("idCode", code, {
-    shouldDirty: true,
-    shouldValidate: true,
-  });
+    setValue("idCode", code, {
+      shouldDirty: true,
+      shouldValidate: true,
+    });
 
-  setScannerOpen(false);
+    setScannerOpen(false);
 
-  toast.success("Barcode scanned", { description: code });
+    toast.success("Barcode scanned", { description: code });
   }
 
   async function submitProduct(values) {
@@ -756,7 +756,6 @@ export default function ProductManagement() {
                 : "Add a product to the credit catalog."}
             </DialogDescription>
           </DialogHeader>
-          
 
           <form className="grid gap-4" onSubmit={handleSubmit(submitProduct)}>
             {/* Product Image */}
@@ -835,18 +834,18 @@ export default function ProductManagement() {
                 <Input
                   id="product-id-code"
                   className="flex-1"
-                 {...register("idCode")}
-               />
+                  {...register("idCode")}
+                />
 
-               <Button
-                type="button"
-                variant="outline"
-                disabled={saving || imageUploading}
-                onClick={(event) => {
-                  event.preventDefault();
-                  event.stopPropagation();
-                  setScannerOpen(true);
-                }}
+                <Button
+                  type="button"
+                  variant="outline"
+                  disabled={saving || imageUploading}
+                  onClick={(event) => {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    setScannerOpen(true);
+                  }}
                 >
                   <ScanBarcode />
                   Scan
@@ -854,7 +853,9 @@ export default function ProductManagement() {
               </div>
 
               {errors.idCode && (
-                <p className="text-sm text-destructive">{errors.idCode.message}</p>
+                <p className="text-sm text-destructive">
+                  {errors.idCode.message}
+                </p>
               )}
             </div>
 
@@ -906,11 +907,11 @@ export default function ProductManagement() {
             </DialogFooter>
           </form>
 
-            <BarcodeScannerDialog
-              open={scannerOpen}
-              onOpenChange={setScannerOpen}
-              onDetected={handleBarcodeDetected}
-            />
+          <BarcodeScannerDialog
+            open={scannerOpen}
+            onOpenChange={setScannerOpen}
+            onDetected={handleBarcodeDetected}
+          />
         </DialogContent>
       </Dialog>
 
