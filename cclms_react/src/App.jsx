@@ -188,7 +188,11 @@ export default function App() {
               <Route path="/login" element={<LoginPage />} />
 
               <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-              <Route path="/password-verify-otp" element={<PasswordVerifyOTP />} />
+              <Route path="/verify-otp" element={<PasswordVerifyOTP />} />
+              <Route
+                path="/password-verify-otp"
+                element={<PasswordVerifyOTP />}
+              />
               <Route path="/reset-password" element={<ResetPassword />} />
 
               <Route

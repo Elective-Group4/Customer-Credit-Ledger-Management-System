@@ -1,13 +1,12 @@
 import { ArrowLeft, Eye, EyeOff, KeyRound, LockKeyhole } from "lucide-react";
-import { useState } from "react";
-import { Link, Navigate, useLocation, useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 
 import Logo from "@/assets/images/logo_sarisari.png";
 
 import { cn } from "@/lib/utils";
 import { supabase } from "@/lib/supabase";
-import { getFunctionErrorMessage } from "@/lib/function-error";
 
 import { Button } from "@/components/ui/button";
 
@@ -40,7 +39,14 @@ const inputClassName = `
   focus:ring-[#D4A017]/20
 `;
 
-function PasswordField({ id, label, placeholder, show, onToggle, autoComplete }) {
+function PasswordField({
+  id,
+  label,
+  placeholder,
+  show,
+  onToggle,
+  autoComplete,
+}) {
   return (
     <Field>
       <FieldLabel htmlFor={id} className="text-sm font-semibold text-gray-900">
@@ -92,7 +98,7 @@ function PasswordField({ id, label, placeholder, show, onToggle, autoComplete })
   );
 }
 
-function ResetPasswordForm({ email, resetToken, className, ...props }) {
+function ResetPasswordForm({ email, className, ...props }) {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [error, setError] = useState("");
@@ -120,13 +126,12 @@ function ResetPasswordForm({ email, resetToken, className, ...props }) {
 
     setIsLoading(true);
 
-    const { error: resetError } = await supabase.functions.invoke(
-      "reset-password",
-      { body: { email, resetToken, newPassword } },
-    );
+    const { error: resetError } = await supabase.auth.updateUser({
+      password: newPassword,
+    });
 
     if (resetError) {
-      setError(await getFunctionErrorMessage(resetError));
+      setError(resetError.message || "Unable to update your password.");
       setIsLoading(false);
       return;
     }
@@ -135,6 +140,7 @@ function ResetPasswordForm({ email, resetToken, className, ...props }) {
       description: "You can now log in with your new password.",
     });
 
+    await supabase.auth.signOut();
     navigate("/login", { replace: true });
     setIsLoading(false);
   }
@@ -250,12 +256,43 @@ function ResetPasswordForm({ email, resetToken, className, ...props }) {
 export default function ResetPasswordPage() {
   const location = useLocation();
   const email = location.state?.email;
-  const resetToken = location.state?.resetToken;
+  const [isCheckingSession, setIsCheckingSession] = useState(true);
+  const [hasRecoverySession, setHasRecoverySession] = useState(false);
+  const navigate = useNavigate();
 
-  // Opened directly without verifying the OTP first
-  if (!email || !resetToken) {
-    return <Navigate to="/forgot-password" replace />;
-  }
+  useEffect(() => {
+    let mounted = true;
+
+    async function checkRecoverySession() {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
+      if (!mounted) return;
+
+      if (!session?.user) {
+        navigate("/login", { replace: true });
+        return;
+      }
+
+      if (!email) {
+        navigate("/forgot-password", { replace: true });
+        return;
+      }
+
+      setHasRecoverySession(true);
+      setIsCheckingSession(false);
+    }
+
+    checkRecoverySession();
+
+    return () => {
+      mounted = false;
+    };
+  }, [navigate]);
+
+  if (isCheckingSession) return null;
+  if (!hasRecoverySession) return null;
 
   return (
     <div className="login-page grid min-h-svh lg:grid-cols-2">
@@ -286,7 +323,7 @@ export default function ResetPasswordPage() {
 
         <div className="flex flex-1 items-center justify-center">
           <div className="w-full max-w-md">
-            <ResetPasswordForm email={email} resetToken={resetToken} />
+            <ResetPasswordForm email={email || "your account"} />
           </div>
         </div>
       </div>
