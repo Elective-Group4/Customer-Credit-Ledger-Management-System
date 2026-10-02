@@ -662,6 +662,7 @@ export default function LandingPageManagement() {
                 <Input
                   id="hero-badge"
                   value={hero.badge}
+                  maxLength={60}
                   onChange={(e) => setField("hero", "badge", e.target.value)}
                 />
               </Field>
@@ -675,6 +676,7 @@ export default function LandingPageManagement() {
                   id="hero-title"
                   rows={2}
                   value={hero.title}
+                  maxLength={90}
                   onChange={(e) => setField("hero", "title", e.target.value)}
                 />
               </Field>
@@ -688,6 +690,7 @@ export default function LandingPageManagement() {
                   id="hero-description"
                   rows={5}
                   value={hero.description}
+                  maxLength={400}
                   onChange={(e) =>
                     setField("hero", "description", e.target.value)
                   }
@@ -701,6 +704,7 @@ export default function LandingPageManagement() {
               >
                 <Input
                   id="hero-note"
+                  maxLength={80}
                   value={hero.note}
                   onChange={(e) => setField("hero", "note", e.target.value)}
                 />
@@ -713,6 +717,7 @@ export default function LandingPageManagement() {
               <Field label="Heading" htmlFor="features-heading">
                 <Input
                   id="features-heading"
+                  maxLength={90}
                   value={features.heading}
                   onChange={(e) =>
                     setField("features", "heading", e.target.value)
@@ -781,6 +786,7 @@ export default function LandingPageManagement() {
                         <Input
                           id={`f-title-${item.id}`}
                           value={item.title}
+                          maxLength={40}
                           onChange={(e) =>
                             updateItem("features", i, { title: e.target.value })
                           }
@@ -796,6 +802,7 @@ export default function LandingPageManagement() {
                           id={`f-text-${item.id}`}
                           rows={3}
                           value={item.text}
+                          maxLength={120}
                           onChange={(e) =>
                             updateItem("features", i, { text: e.target.value })
                           }
@@ -813,6 +820,7 @@ export default function LandingPageManagement() {
               <Field label="Heading" htmlFor="steps-heading">
                 <Input
                   id="steps-heading"
+                  maxLength={90}
                   value={steps.heading}
                   onChange={(e) => setField("steps", "heading", e.target.value)}
                 />
@@ -864,6 +872,7 @@ export default function LandingPageManagement() {
               <Field label="Heading" htmlFor="about-heading">
                 <Input
                   id="about-heading"
+                  maxLength={90}
                   value={about.heading}
                   onChange={(e) => setField("about", "heading", e.target.value)}
                 />
@@ -878,6 +887,7 @@ export default function LandingPageManagement() {
                   id="about-text"
                   rows={7}
                   value={about.text}
+                  maxLength={600}
                   onChange={(e) => setField("about", "text", e.target.value)}
                 />
               </Field>
