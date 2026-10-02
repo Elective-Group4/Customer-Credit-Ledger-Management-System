@@ -48,10 +48,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-// =========================================================
-// PHONE NUMBER HELPERS (same rules as Owner Management)
-// =========================================================
-
 const phoneNumberPattern = /^\+63 9\d{9}$/;
 
 function formatPhoneNumber(value = "") {
@@ -68,8 +64,6 @@ function formatPhoneNumber(value = "") {
   return value.trim();
 }
 
-// Keeps only the 10 digits after +63 (must start with 9).
-// Also handles pasted values like 09123456789 or +63 9123456789.
 function getLocalDigits(value = "") {
   let digits = value.replace(/\D/g, "");
 

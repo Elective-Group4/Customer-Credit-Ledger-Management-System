@@ -23,7 +23,6 @@ import ProductManagement from "./components/Modules/StoreOwner/ProductManagement
 import TransactionHistory from "./components/Modules/StoreOwner/TransactionHistory";
 import CustomerManagement from "./components/Modules/StoreOwner/CustomerManagement";
 import ForgotPasswordPage from "./components/Modules/ForgotPassword/ForgotPassword";
-import PasswordVerifyOTP from "./components/Modules/ForgotPassword/PasswordVerifyOTP";
 import ResetPassword from "./components/Modules/ForgotPassword/ResetPassword";
 
 import { supabase } from "./lib/supabase";
@@ -188,11 +187,6 @@ export default function App() {
               <Route path="/login" element={<LoginPage />} />
 
               <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-              <Route path="/verify-otp" element={<PasswordVerifyOTP />} />
-              <Route
-                path="/password-verify-otp"
-                element={<PasswordVerifyOTP />}
-              />
               <Route path="/reset-password" element={<ResetPassword />} />
 
               <Route

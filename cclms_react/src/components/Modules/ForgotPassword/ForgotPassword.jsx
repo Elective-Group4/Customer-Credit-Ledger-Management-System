@@ -1,6 +1,6 @@
 import { ArrowLeft, Mail, Send } from "lucide-react";
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { toast } from "sonner";
 
 import Logo from "@/assets/images/logo_sarisari.png";
@@ -23,7 +23,7 @@ import { Input } from "@/components/ui/input";
 function ForgotPasswordForm({ className, ...props }) {
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const navigate = useNavigate();
+  const [sentTo, setSentTo] = useState("");
 
   async function handleSubmit(event) {
     event.preventDefault();
@@ -31,30 +31,25 @@ function ForgotPasswordForm({ className, ...props }) {
     setIsLoading(true);
 
     const formData = new FormData(event.currentTarget);
-    const email = String(formData.get("email") || "")
-      .trim()
-      .toLowerCase();
+    const email = String(formData.get("email") || "").trim();
 
-    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      setError("Please enter a valid email address.");
+    const { error: resetError } = await supabase.auth.resetPasswordForEmail(
+      email,
+      { redirectTo: `${window.location.origin}/reset-password` },
+    );
+
+    if (resetError) {
+      console.error("Reset password error:", resetError);
+      setError(resetError.message || "Unable to send the reset link.");
       setIsLoading(false);
       return;
     }
 
-    const { error: sendError } =
-      await supabase.auth.resetPasswordForEmail(email);
-
-    if (sendError) {
-      setError(sendError.message || "Unable to send the verification code.");
-      setIsLoading(false);
-      return;
-    }
-
-    toast.success("Verification code sent", {
+    toast.success("Reset link sent", {
       description: "Please check your email inbox.",
     });
 
-    navigate("/verify-otp", { state: { email } });
+    setSentTo(email);
     setIsLoading(false);
   }
 
@@ -76,7 +71,7 @@ function ForgotPasswordForm({ className, ...props }) {
 
           <p className="mt-2 text-sm text-gray-500">
             Enter the email linked to your account and we&apos;ll send you a
-            4-digit verification code.
+            link to reset your password.
           </p>
 
           {/* Gold Accent */}
@@ -158,11 +153,11 @@ function ForgotPasswordForm({ className, ...props }) {
             "
           >
             {isLoading ? (
-              "Sending code..."
+              "Sending link..."
             ) : (
               <>
                 <Send className="mr-2 h-5 w-5" />
-                Send code
+                Send reset link
               </>
             )}
           </Button>
@@ -184,6 +179,13 @@ function ForgotPasswordForm({ className, ...props }) {
               {error}
             </p>
           </div>
+        )}
+
+        {sentTo && !error && (
+          <p className="text-center text-sm text-green-700" role="status">
+            If an account exists for {sentTo}, a password reset link has been
+            sent.
+          </p>
         )}
 
         {/* Back to login */}
