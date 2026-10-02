@@ -59,10 +59,6 @@ function AdminRoute({ children }) {
         .eq("id", session.user.id)
         .single();
 
-      console.log("Current session:", session.user.email);
-      console.log("Profile:", profile);
-      console.log("Profile error:", error);
-
       if (!mounted) return;
 
       if (error) {
@@ -74,8 +70,6 @@ function AdminRoute({ children }) {
       if (profile?.role === "admin" && profile?.status === "active") {
         setStatus("allowed");
       } else {
-        console.log("User role is:", profile?.role);
-        console.log("Admin profile status is:", profile?.status);
         if (profile?.role === "admin") {
           await supabase.auth.signOut();
         }
@@ -124,11 +118,6 @@ function OwnerRoute({ children }) {
         .select("role, status")
         .eq("id", session.user.id)
         .single();
-
-      console.log("AUTH USER:", session.user.id);
-      console.log("PROFILE ROLE:", profile?.role);
-      console.log("PROFILE STATUS:", profile?.status);
-      console.log("OWNER ROUTE PROFILE ERROR:", error);
 
       if (!mounted) return;
 

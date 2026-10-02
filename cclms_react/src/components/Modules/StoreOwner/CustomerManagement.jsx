@@ -36,6 +36,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { cn } from "@/lib/utils";
 
 import { Controller, useForm } from "react-hook-form";
 
@@ -64,7 +65,13 @@ export default function CustomerManagement() {
     formState: { errors },
   } = useForm({
     resolver: zodResolver(customerSchema),
-    defaultValues: { customerCode: "", name: "", phoneNumber: "", address: "", status: "active" },
+    defaultValues: {
+      customerCode: "",
+      name: "",
+      phoneNumber: "",
+      address: "",
+      status: "active",
+    },
   });
   const filteredCustomers = useMemo(() => {
     const query = search.trim().toLowerCase();
@@ -169,12 +176,12 @@ export default function CustomerManagement() {
       header: "Status",
       cell: (row) => (
         <Badge
-        className={
-          row.status === "active"
-          ? "bg-green-400/70"
-          : "bg-muted text-muted-foreground"
-        }
-        variant={row.status === "active" ? "default" : "secondary"}
+          className={
+            row.status === "active"
+              ? "bg-green-400/70"
+              : "bg-muted text-muted-foreground"
+          }
+          variant={row.status === "active" ? "default" : "secondary"}
         >
           {row.status}
         </Badge>
@@ -337,27 +344,30 @@ export default function CustomerManagement() {
                 name="status"
                 control={control}
                 render={({ field }) => (
-                <Select value={field.value} onValueChange={field.onChange}>
-                  <SelectTrigger
-                    id="customer-status"
-                    className={cn(
-                      "h-10 border-stone-200 focus:ring-[#8B4E2F]/30 dark:border-border dark:bg-background",
-                      field.value === "inactive" &&
-                      "bg-muted text-muted-foreground dark:bg-muted",
-                  )}>   
-                  <SelectValue placeholder="Select status" />
-                </SelectTrigger>
+                  <Select value={field.value} onValueChange={field.onChange}>
+                    <SelectTrigger
+                      id="customer-status"
+                      className={cn(
+                        "h-10 border-stone-200 focus:ring-[#8B4E2F]/30 dark:border-border dark:bg-background",
+                        field.value === "inactive" &&
+                          "bg-muted text-muted-foreground dark:bg-muted",
+                      )}
+                    >
+                      <SelectValue placeholder="Select status" />
+                    </SelectTrigger>
 
-                <SelectContent>
-                  <SelectItem value="active">Active</SelectItem>
-                  <SelectItem value="inactive">Inactive</SelectItem>
-                </SelectContent>
-              </Select>
-               )}
+                    <SelectContent>
+                      <SelectItem value="active">Active</SelectItem>
+                      <SelectItem value="inactive">Inactive</SelectItem>
+                    </SelectContent>
+                  </Select>
+                )}
               />
 
               {errors.status && (
-                <p className="text-sm text-destructive">{errors.status.message}</p>
+                <p className="text-sm text-destructive">
+                  {errors.status.message}
+                </p>
               )}
             </div>
 
