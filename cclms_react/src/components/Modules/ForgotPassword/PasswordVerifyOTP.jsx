@@ -8,7 +8,6 @@ import Logo from "@/assets/images/logo_sarisari.png";
 
 import { cn } from "@/lib/utils";
 import { supabase } from "@/lib/supabase";
-import { getFunctionErrorMessage } from "@/lib/function-error";
 
 import { Button } from "@/components/ui/button";
 
@@ -49,21 +48,34 @@ function VerifyOtpForm({ email, className, ...props }) {
     event.preventDefault();
     setError("");
 
-    if (otp.length !== 4) {
-      setError("Please enter the 4-digit code.");
+    if (otp.length !== 6) {
+      setError("Please enter the 6-digit code.");
       return;
     }
 
     setIsLoading(true);
 
-    const { data, error: verifyError } = await supabase.functions.invoke(
-      "verify-reset-otp",
-      { body: { email, otp } },
-    );
+    const { error: verifyError } = await supabase.auth.verifyOtp({
+      email,
+      token: otp,
+      type: "recovery",
+    });
 
     if (verifyError) {
-      setError(await getFunctionErrorMessage(verifyError));
+      setError(verifyError.message || "The code is invalid or expired.");
       setOtp("");
+      setIsLoading(false);
+      return;
+    }
+
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+
+    if (!session?.user) {
+      setError(
+        "Your recovery session could not be established. Please try again.",
+      );
       setIsLoading(false);
       return;
     }
@@ -72,11 +84,7 @@ function VerifyOtpForm({ email, className, ...props }) {
       description: "You can now set a new password.",
     });
 
-    // The token proves the OTP was verified; use it on the reset page.
-    navigate("/reset-password", {
-      replace: true,
-      state: { email, resetToken: data.resetToken },
-    });
+    navigate("/reset-password", { replace: true, state: { email } });
 
     setIsLoading(false);
   }
@@ -85,13 +93,11 @@ function VerifyOtpForm({ email, className, ...props }) {
     setError("");
     setIsResending(true);
 
-    const { error: sendError } = await supabase.functions.invoke(
-      "send-reset-otp",
-      { body: { email } },
-    );
+    const { error: sendError } =
+      await supabase.auth.resetPasswordForEmail(email);
 
     if (sendError) {
-      setError(await getFunctionErrorMessage(sendError));
+      setError(sendError.message || "Unable to resend the verification code.");
       setIsResending(false);
       return;
     }
@@ -119,7 +125,7 @@ function VerifyOtpForm({ email, className, ...props }) {
           </h1>
 
           <p className="mt-2 text-sm text-gray-500">
-            We sent a 4-digit verification code to{" "}
+            We sent a 6-digit verification code to{" "}
             <span className="font-semibold text-gray-900">{email}</span>.
           </p>
 
@@ -131,7 +137,7 @@ function VerifyOtpForm({ email, className, ...props }) {
         <Field>
           <FieldLabel
             htmlFor="otp"
-            className="text-sm font-semibold text-gray-900"
+            className="w-full justify-center text-sm font-semibold text-gray-900"
           >
             Verification code
           </FieldLabel>
@@ -139,7 +145,7 @@ function VerifyOtpForm({ email, className, ...props }) {
           <div className="mt-2">
             <InputOTP
               id="otp"
-              maxLength={4}
+              maxLength={6}
               pattern={REGEXP_ONLY_DIGITS}
               inputMode="numeric"
               autoComplete="one-time-code"
@@ -147,9 +153,10 @@ function VerifyOtpForm({ email, className, ...props }) {
               value={otp}
               onChange={setOtp}
               disabled={isLoading}
+              containerClassName="justify-center"
             >
               <InputOTPGroup className="gap-3">
-                {[0, 1, 2, 3].map((index) => (
+                {[0, 1, 2, 3, 4, 5].map((index) => (
                   <InputOTPSlot
                     key={index}
                     index={index}
@@ -198,7 +205,7 @@ function VerifyOtpForm({ email, className, ...props }) {
         <Field className="mt-2">
           <Button
             type="submit"
-            disabled={isLoading || otp.length !== 4}
+            disabled={isLoading || otp.length !== 6}
             className="
               h-14
               w-full

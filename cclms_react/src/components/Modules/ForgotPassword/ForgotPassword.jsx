@@ -7,7 +7,6 @@ import Logo from "@/assets/images/logo_sarisari.png";
 
 import { cn } from "@/lib/utils";
 import { supabase } from "@/lib/supabase";
-import { getFunctionErrorMessage } from "@/lib/function-error";
 
 import { Button } from "@/components/ui/button";
 
@@ -32,16 +31,21 @@ function ForgotPasswordForm({ className, ...props }) {
     setIsLoading(true);
 
     const formData = new FormData(event.currentTarget);
-    const email = String(formData.get("email") || "").trim();
+    const email = String(formData.get("email") || "")
+      .trim()
+      .toLowerCase();
 
-    const { error: sendError } = await supabase.functions.invoke(
-      "send-reset-otp",
-      { body: { email } },
-    );
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      setError("Please enter a valid email address.");
+      setIsLoading(false);
+      return;
+    }
+
+    const { error: sendError } =
+      await supabase.auth.resetPasswordForEmail(email);
 
     if (sendError) {
-      console.error("Send OTP error:", sendError);
-      setError(await getFunctionErrorMessage(sendError));
+      setError(sendError.message || "Unable to send the verification code.");
       setIsLoading(false);
       return;
     }
