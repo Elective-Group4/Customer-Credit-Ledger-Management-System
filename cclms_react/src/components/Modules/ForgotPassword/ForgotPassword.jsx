@@ -1,4 +1,4 @@
-import { ArrowLeft, Eye, EyeOff, LockKeyhole, LogIn, Mail } from "lucide-react";
+import { ArrowLeft, Mail, Send } from "lucide-react";
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
@@ -7,7 +7,7 @@ import Logo from "@/assets/images/logo_sarisari.png";
 
 import { cn } from "@/lib/utils";
 import { supabase } from "@/lib/supabase";
-import { getClientIp } from "@/lib/client-ip";
+import { getFunctionErrorMessage } from "@/lib/function-error";
 
 import { Button } from "@/components/ui/button";
 
@@ -21,15 +21,9 @@ import {
 
 import { Input } from "@/components/ui/input";
 
-function LoginForm({ className, ...props }) {
-  const [showPassword, setShowPassword] = useState(false);
+function ForgotPasswordForm({ className, ...props }) {
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [rememberMe, setRememberMe] = useState(() =>
-    Boolean(localStorage.getItem("cclms.rememberedEmail")),
-  );
-  const rememberedEmail = localStorage.getItem("cclms.rememberedEmail") || "";
-
   const navigate = useNavigate();
 
   async function handleSubmit(event) {
@@ -38,133 +32,31 @@ function LoginForm({ className, ...props }) {
     setIsLoading(true);
 
     const formData = new FormData(event.currentTarget);
-    const email = formData.get("email");
-    const password = formData.get("password");
+    const email = String(formData.get("email") || "").trim();
 
-    if (rememberMe) {
-      localStorage.setItem("cclms.rememberedEmail", email);
-    } else {
-      localStorage.removeItem("cclms.rememberedEmail");
+    const { error: sendError } = await supabase.functions.invoke(
+      "send-reset-otp",
+      { body: { email } },
+    );
+
+    if (sendError) {
+      console.error("Send OTP error:", sendError);
+      setError(await getFunctionErrorMessage(sendError));
+      setIsLoading(false);
+      return;
     }
 
-    // Login with Supabase Auth
-    const { data, error: loginError } = await supabase.auth.signInWithPassword({
-      email,
-      password,
+    toast.success("Verification code sent", {
+      description: "Please check your email inbox.",
     });
 
-    console.log("AUTH USER:", data?.user?.id);
-    console.log("LOGIN ERROR:", loginError);
-
-    if (loginError) {
-      setError(loginError.message);
-      setIsLoading(false);
-      return;
-    }
-
-    // Make sure we received a user
-    if (!data?.user) {
-      setError("Unable to retrieve your account.");
-      setIsLoading(false);
-      return;
-    }
-
-    // Get user's profile and role
-    const { data: profile, error: profileError } = await supabase
-      .from("profiles")
-      .select("role, status, full_name")
-      .eq("id", data.user.id)
-      .single();
-
-    if (profileError) {
-      console.error("Profile error:", profileError);
-
-      setError("Unable to find your account profile.");
-
-      await supabase.auth.signOut();
-      setIsLoading(false);
-      return;
-    }
-
-    console.log("Logged in user:", data.user.email);
-    console.log("PROFILE ROLE:", profile.role);
-    console.log("PROFILE STATUS:", profile.status);
-
-    // ============================
-    // ADMIN LOGIN
-    // ============================
-    if (profile.role === "admin") {
-      if (profile.status !== "active") {
-        await supabase.auth.signOut();
-        setError(
-          "Your administrator account is inactive. Please contact the administrator.",
-        );
-        setIsLoading(false);
-        return;
-      }
-
-      // Create ADMIN LOGIN log
-      const ipAddress = await getClientIp();
-
-      const { error: logError } = await supabase.from("admin_logs").insert({
-        admin_id: data.user.id,
-        action: "LOGIN",
-        ip_address: ipAddress,
-      });
-
-      if (logError) {
-        console.error("Login log error:", logError);
-      }
-
-      toast.success("Login successful", {
-        description: "Welcome to the admin dashboard.",
-      });
-
-      navigate("/admin", {
-        replace: true,
-      });
-
-      setIsLoading(false);
-      return;
-    }
-
-    // ============================
-    // OWNER LOGIN
-    // ============================
-    if (profile.role === "owner") {
-      if (profile.status !== "active") {
-        await supabase.auth.signOut();
-        setError(
-          "Your account has been deactivated. Please contact the administrator.",
-        );
-        setIsLoading(false);
-        return;
-      }
-
-      toast.success("Login successful", {
-        description: "Welcome to your owner dashboard.",
-      });
-
-      navigate("/owner", {
-        replace: true,
-      });
-
-      setIsLoading(false);
-      return;
-    }
-
-    // ============================
-    // INVALID ROLE
-    // ============================
-    console.error("Invalid user role:", profile.role);
-
-    setError("Your account has an invalid role.");
-
-    await supabase.auth.signOut();
-
+    navigate("/verify-otp", { state: { email } });
     setIsLoading(false);
   }
 
+  // ============================
+  // FORM STATE
+  // ============================
   return (
     <form
       className={cn("w-full", className)}
@@ -175,11 +67,12 @@ function LoginForm({ className, ...props }) {
         {/* Header */}
         <div className="mb-4 flex flex-col items-start">
           <h1 className="text-3xl font-bold tracking-tight text-gray-950">
-            Welcome!
+            Forgot password?
           </h1>
 
           <p className="mt-2 text-sm text-gray-500">
-            Please enter your details to sign in.
+            Enter the email linked to your account and we&apos;ll send you a
+            4-digit verification code.
           </p>
 
           {/* Gold Accent */}
@@ -213,7 +106,6 @@ function LoginForm({ className, ...props }) {
               name="email"
               type="email"
               placeholder="user@gmail.com"
-              defaultValue={rememberedEmail}
               required
               autoComplete="email"
               className="
@@ -236,117 +128,7 @@ function LoginForm({ className, ...props }) {
           </div>
         </Field>
 
-        {/* Password */}
-        <Field>
-          <FieldLabel
-            htmlFor="password"
-            className="text-sm font-semibold text-gray-900"
-          >
-            Password
-          </FieldLabel>
-
-          <div className="relative mt-2">
-            <LockKeyhole
-              className="
-                absolute
-                left-4
-                top-1/2
-                h-5
-                w-5
-                -translate-y-1/2
-                text-gray-400
-              "
-            />
-
-            <Input
-              id="password"
-              name="password"
-              type={showPassword ? "text" : "password"}
-              placeholder="Enter your password"
-              required
-              autoComplete="current-password"
-              className="
-                h-14
-                rounded-xl
-                border-gray-300
-                bg-white
-                pl-12
-                pr-12
-                text-base
-                text-gray-900
-                shadow-none
-                transition
-                placeholder:text-gray-400
-                focus:border-[#D4A017]
-                focus:ring-2
-                focus:ring-[#D4A017]/20
-              "
-            />
-
-            <button
-              type="button"
-              onClick={() => setShowPassword((previous) => !previous)}
-              className="
-                absolute
-                right-4
-                top-1/2
-                -translate-y-1/2
-                text-gray-400
-                transition-colors
-                hover:text-gray-800
-              "
-              aria-label={showPassword ? "Hide password" : "Show password"}
-            >
-              {showPassword ? (
-                <EyeOff className="h-5 w-5" />
-              ) : (
-                <Eye className="h-5 w-5" />
-              )}
-            </button>
-          </div>
-
-          {/* Remember Me / Forgot Password */}
-          <div className="mt-3 flex items-center justify-between gap-4">
-            <label
-              htmlFor="rememberMe"
-              className="flex cursor-pointer items-center gap-2"
-            >
-              <input
-                type="checkbox"
-                id="rememberMe"
-                name="rememberMe"
-                checked={rememberMe}
-                onChange={(event) => setRememberMe(event.target.checked)}
-                className="
-                  h-4
-                  w-4
-                  cursor-pointer
-                  rounded
-                  border-gray-300
-                  accent-[#D4A017]
-                "
-              />
-
-              <span className="text-sm text-gray-900">Remember me</span>
-            </label>
-
-            <Link
-              to="/forgot-password"
-              className="
-                text-sm
-                font-medium
-                text-[#C28F00]
-                transition-colors
-                hover:text-[#9D7500]
-                hover:underline
-              "
-            >
-              Forgot your password?
-            </Link>
-          </div>
-        </Field>
-
-        {/* Login Button */}
+        {/* Submit Button */}
         <Field className="mt-2">
           <Button
             type="submit"
@@ -372,11 +154,11 @@ function LoginForm({ className, ...props }) {
             "
           >
             {isLoading ? (
-              "Logging in..."
+              "Sending code..."
             ) : (
               <>
-                <LogIn className="mr-2 h-5 w-5" />
-                Login
+                <Send className="mr-2 h-5 w-5" />
+                Send code
               </>
             )}
           </Button>
@@ -400,6 +182,17 @@ function LoginForm({ className, ...props }) {
           </div>
         )}
 
+        {/* Back to login */}
+        <p className="text-center text-sm text-gray-500">
+          Remembered your password?{" "}
+          <Link
+            to="/login"
+            className="font-medium text-[#C28F00] transition-colors hover:text-[#9D7500] hover:underline"
+          >
+            Back to login
+          </Link>
+        </p>
+
         {/* Footer */}
         <div className="mt-2">
           <FieldSeparator />
@@ -413,11 +206,11 @@ function LoginForm({ className, ...props }) {
   );
 }
 
-export default function LoginPage() {
+export default function ForgotPasswordPage() {
   return (
     <div className="login-page grid min-h-svh lg:grid-cols-2">
       {/* =====================================================
-          LEFT SIDE - LOGIN
+          LEFT SIDE - FORGOT PASSWORD
       ====================================================== */}
       <div
         className="
@@ -434,16 +227,16 @@ export default function LoginPage() {
             variant="ghost"
             className="-ml-3 text-gray-600 hover:bg-transparent hover:text-gray-950"
           >
-            <Link to="/">
+            <Link to="/login">
               <ArrowLeft className="mr-2 h-4 w-4" />
-              Back to landing page
+              Back to login
             </Link>
           </Button>
         </div>
 
         <div className="flex flex-1 items-center justify-center">
           <div className="w-full max-w-md">
-            <LoginForm />
+            <ForgotPasswordForm />
           </div>
         </div>
       </div>
