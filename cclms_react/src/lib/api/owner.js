@@ -400,7 +400,9 @@ export const ownerApi = {
   // -------------------------------------------------------
 
   async deleteCustomer(id) {
-    const { error } = await supabase.from("customers").delete().eq("id", id);
+    const { error } = await supabase.rpc("delete_customer_if_settled", {
+      p_customer_id: id,
+    });
 
     if (error) {
       throw error;

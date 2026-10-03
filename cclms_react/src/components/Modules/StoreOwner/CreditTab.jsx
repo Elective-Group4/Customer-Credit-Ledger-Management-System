@@ -280,8 +280,20 @@ export default function CreditTab() {
     ? customers.find((customer) => customer.id === selectedCustomer.id) ||
       selectedCustomer
     : null;
+  const activeCustomers = customers.filter(
+    (customer) => customer.status === "active",
+  );
+  const selectedCreditCustomer = customers.find(
+    (customer) => customer.id === selectedCustomerId,
+  );
 
   async function submitCredit(values) {
+    const customer = customers.find((item) => item.id === values.customerId);
+    if (customer?.status !== "active") {
+      toast.error("Cannot add credit. This customer is inactive.");
+      return;
+    }
+
     setSaving(true);
     try {
       await ownerApi.createCredit(values);
@@ -354,7 +366,7 @@ export default function CreditTab() {
         <Button
           className="h-11 px-5 bg-[#D4A017] hover:bg-[#D4A017]/90 text-white"
           onClick={() => setAddOpen(true)}
-          disabled={!customers.length || !products.length}
+          disabled={!activeCustomers.length || !products.length}
         >
           <Plus /> Add Credit
         </Button>
@@ -509,7 +521,7 @@ export default function CreditTab() {
                   <SelectValue placeholder="Choose a customer" />
                 </SelectTrigger>
                 <SelectContent>
-                  {customers.map((customer) => (
+                  {activeCustomers.map((customer) => (
                     <SelectItem key={customer.id} value={customer.id}>
                       {customer.name} ({customer.customerCode})
                     </SelectItem>
@@ -616,7 +628,7 @@ export default function CreditTab() {
               <Button
                 className="bg-[#D4A017] hover:bg-[#D4A017]/90 text-white"
                 type="submit"
-                disabled={saving}
+                disabled={saving || selectedCreditCustomer?.status !== "active"}
               >
                 {saving ? "Saving..." : "Add Credit"}
               </Button>

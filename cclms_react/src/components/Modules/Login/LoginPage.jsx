@@ -53,9 +53,6 @@ function LoginForm({ className, ...props }) {
       password,
     });
 
-    console.log("AUTH USER:", data?.user?.id);
-    console.log("LOGIN ERROR:", loginError);
-
     if (loginError) {
       setError(loginError.message);
       setIsLoading(false);
@@ -77,18 +74,12 @@ function LoginForm({ className, ...props }) {
       .single();
 
     if (profileError) {
-      console.error("Profile error:", profileError);
-
       setError("Unable to find your account profile.");
 
       await supabase.auth.signOut();
       setIsLoading(false);
       return;
     }
-
-    console.log("Logged in user:", data.user.email);
-    console.log("PROFILE ROLE:", profile.role);
-    console.log("PROFILE STATUS:", profile.status);
 
     // ============================
     // ADMIN LOGIN

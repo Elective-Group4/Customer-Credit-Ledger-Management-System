@@ -141,20 +141,34 @@ export default function CustomerManagement() {
 
   async function deleteCustomer() {
     if (!customerToDelete) return;
+
+    if (Number(customerToDelete.balance) !== 0) {
+      toast.error(
+        "Cannot delete customer. Please settle the outstanding balance first.",
+      );
+      return;
+    }
+
     setSaving(true);
     try {
       await ownerApi.deleteCustomer(customerToDelete.id);
-      toast.success("Customer deleted");
+      toast.success("Customer deleted successfully.");
       setDeleteOpen(false);
       setCustomerToDelete(null);
       await refresh();
     } catch (deleteError) {
-      toast.error("Unable to delete customer", {
-        description:
-          deleteError instanceof Error
-            ? deleteError.message
-            : "Please try again.",
-      });
+      const message =
+        deleteError instanceof Error
+          ? deleteError.message
+          : "Please try again.";
+      toast.error(
+        message.includes("settle the outstanding balance")
+          ? "Cannot delete customer. Please settle the outstanding balance first."
+          : "Unable to delete customer",
+        message.includes("settle the outstanding balance")
+          ? undefined
+          : { description: message },
+      );
     } finally {
       setSaving(false);
     }

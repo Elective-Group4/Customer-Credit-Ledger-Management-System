@@ -13,7 +13,7 @@ it does not have HTTP ok status.
 The failed request was:
 
 ```text
-POST https://yvlxttvcvdpbrybrbzsd.supabase.co/functions/v1/smart-action
+POST https://<project-ref>.supabase.co/functions/v1/smart-action
 ```
 
 The request originated from the local Vite application at
@@ -83,7 +83,7 @@ The local source does not change the already-hosted Supabase function until it
 is deployed. From the repository root, run:
 
 ```powershell
-supabase functions deploy smart-action --project-ref yvlxttvcvdpbrybrbzsd
+supabase functions deploy smart-action
 ```
 
 After deployment, reload the Admin page and test Create, Edit, and Delete.

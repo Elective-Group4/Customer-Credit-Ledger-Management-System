@@ -33,9 +33,11 @@ Product images are uploaded to the `product-images` Storage bucket under `{store
 | `listCustomers()`           | `owner_customer_balances.select(*)` | None                                      | Customers with calculated balances   |
 | `createCustomer(input)`     | `customers.insert()`                | `name`, optional `phoneNumber`, `address` | Created customer with generated code |
 | `updateCustomer(id, input)` | `customers.update()`                | Customer `id`, `name`, contact fields     | Updated customer                     |
-| `deleteCustomer(id)`        | `customers.delete()`                | Customer `id`                             | No content                           |
+| `deleteCustomer(id)`        | `delete_customer_if_settled` RPC    | Customer `id`                             | Soft-deletes a zero-balance customer |
 
 The database generates `customer_code`. The client must not create or preview it.
+
+Customer deletion is owner-scoped and allowed only when the calculated balance is exactly zero. The RPC sets `customers.deleted_at` so related credit and payment history remains intact; deleted customers are excluded from `owner_customer_balances`.
 
 ### Credit and Payments
 
@@ -47,6 +49,8 @@ The database generates `customer_code`. The client must not create or preview it
 | `createPayment(input)` | `create_payment`                                  | `p_customer_id`, `p_amount`, `p_payment_type`               |
 
 Credit and payment RPCs must validate ownership and write related rows atomically.
+
+The `create_credit_entry` path also rejects inactive or soft-deleted customers. The UI filters inactive customers, but the database trigger is authoritative for direct API requests.
 
 ### Dashboard and Transactions
 

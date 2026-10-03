@@ -34,6 +34,9 @@ Customer-Credit-Ledger-Management-System/
 │   ├── vite.config.js
 │   └── index.html
 ├── supabase/
+│   ├── account-theme-and-ledger-security.sql
+│   ├── owner-account-deactivation.sql
+│   ├── password-reset-otp.sql
 │   ├── functions/
 │   │   ├── create-store-owner/
 │   │   ├── update-store-owner/
@@ -49,6 +52,8 @@ Customer-Credit-Ledger-Management-System/
 ├── UI_DESIGN.md
 └── README.md
 ```
+
+The canonical project entry point is the root `README.md`. The React app does not contain a second README.
 
 ## Where to Make Changes
 

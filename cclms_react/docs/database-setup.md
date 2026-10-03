@@ -19,7 +19,7 @@ Add the same variable names to:
 
 Do not commit `.env.local` or expose a service-role key in the frontend.
 
-> `SYSTEM_ARCHITECTURE.md` currently mentions `VITE_SUPABASE_ANON_KEY`. The implemented client uses `VITE_SUPABASE_PUBLISHABLE_KEY`; use the implemented name unless the client code is intentionally changed.
+The implemented client uses `VITE_SUPABASE_PUBLISHABLE_KEY`; use that name for local and Vercel configuration.
 
 ## Existing Tables
 
@@ -27,15 +27,16 @@ The current Admin features already use these tables:
 
 ### `profiles`
 
-| Column         | Type                    | Required | Notes                                   |
-| -------------- | ----------------------- | -------: | --------------------------------------- |
-| `id`           | `uuid`                  |      Yes | Primary key; references `auth.users.id` |
-| `full_name`    | `text`                  |      Yes | Display name                            |
-| `email`        | `text`                  |      Yes | Account email                           |
-| `phone_number` | `text`                  |       No | Contact number                          |
-| `role`         | `text` or existing enum |      Yes | Must include `admin` and `owner`        |
-| `status`       | `text` or existing enum |      Yes | Normally `active` or `inactive`         |
-| `created_at`   | `timestamptz`           |      Yes | Defaults to `now()`                     |
+| Column             | Type                    | Required | Notes                                   |
+| ------------------ | ----------------------- | -------: | --------------------------------------- |
+| `id`               | `uuid`                  |      Yes | Primary key; references `auth.users.id` |
+| `full_name`        | `text`                  |      Yes | Display name                            |
+| `email`            | `text`                  |      Yes | Account email                           |
+| `phone_number`     | `text`                  |       No | Contact number                          |
+| `role`             | `text` or existing enum |      Yes | Must include `admin` and `owner`        |
+| `status`           | `text` or existing enum |      Yes | Normally `active` or `inactive`         |
+| `created_at`       | `timestamptz`           |      Yes | Defaults to `now()`                     |
+| `theme_preference` | `text`                  |      Yes | `light`, `dark`, or `system`            |
 
 ### `store_owners`
 
@@ -87,6 +88,7 @@ Stores customers belonging to one owner store.
 - `phone_number text not null`
 - `address text not null`
 - `status customer_status not null default 'active'`
+- `deleted_at timestamptz null`, set by the safe customer deletion RPC
 - `created_at timestamptz not null default now()`
 - `updated_at timestamptz not null default now()`
 
@@ -212,6 +214,8 @@ left join (
   group by customer_id
 ) payments on payments.customer_id = c.id;
 ```
+
+The current security migration adds `where c.deleted_at is null` to this view. This removes soft-deleted customers from active lists without removing their credit or payment history.
 
 ## Dashboard RPC Functions
 
@@ -426,11 +430,11 @@ alter table public.payments enable row level security;
 
 Run `docs/customer-management-supabase.sql` after this schema block. It installs the random customer-code default, adds the global unique constraint only when it is missing, and reviews existing policies before adding any missing customer policies.
 
-## Mock API to Supabase Mapping
+## API to Supabase Mapping
 
-The UI currently calls `src/lib/api/owner.js`. Replace the mock implementation there with Supabase queries while preserving the function names:
+The UI calls the Supabase-backed boundary in `src/lib/api/owner.js`:
 
-| Mock API function     | Supabase operation                                                      |
+| API function          | Supabase operation                                                      |
 | --------------------- | ----------------------------------------------------------------------- |
 | `listProducts`        | `from('products').select('*').order('name')`                            |
 | `createProduct`       | Insert into `products` with the current owner's `store_id`              |
@@ -440,14 +444,14 @@ The UI currently calls `src/lib/api/owner.js`. Replace the mock implementation t
 | `listCustomers`       | Select from `owner_customer_balances`                                   |
 | `createCustomer`      | Insert into `customers`; let PostgreSQL generate `customer_code`        |
 | `updateCustomer`      | Update `customers` by `id`                                              |
-| `deleteCustomer`      | Delete `customers` by `id` after checking history constraints           |
+| `deleteCustomer`      | Call `delete_customer_if_settled`; set `deleted_at` at zero balance     |
 | `listCredits`         | Select `credit_entries` with nested `credit_entry_items`                |
 | `createCredit`        | Insert `credit_entries` and `credit_entry_items` in one RPC/transaction |
 | `createPayment`       | Insert into `payments` through an RPC that validates the balance        |
 | `listTransactions`    | Select credit entries and nested item names                             |
 | `getDashboard`        | Call the three dashboard RPCs                                           |
 
-For credit creation and payment creation, prefer RPC functions so the parent row, child rows, balance validation, and amount calculations are atomic.
+Credit creation and payment creation use RPC functions so related rows, balance validation, and amount calculations are atomic. Run `supabase/account-theme-and-ledger-security.sql` after the base schema and existing owner/RLS migrations to install the theme preference, safe deletion RPC, and inactive-credit trigger.
 
 ## Free-Tier Notes
 

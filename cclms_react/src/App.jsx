@@ -1,5 +1,5 @@
-import { lazy, Suspense, useEffect, useState } from "react";
-import { ThemeProvider } from "next-themes";
+import { lazy, Suspense, useEffect, useRef, useState } from "react";
+import { ThemeProvider, useTheme } from "next-themes";
 
 import { BrowserRouter, Navigate, Routes, Route } from "react-router-dom";
 
@@ -46,6 +46,187 @@ function LandingPageEntry() {
   }, []);
 
   return loading ? <StoreLoader /> : <LandingPage />;
+}
+
+/* ============================================================
+   THEME PERSISTENCE (per authenticated user)
+
+   - Supabase (profiles.theme_preference) is the source of truth.
+   - The saved preference is loaded ONCE per user.
+   - A save happens only when the active theme differs from what
+     the database already holds.
+   - next-themes' setTheme does not keep a stable identity, so it is
+     read through a ref and never used as an effect dependency.
+     (Depending on it restarted the load on every toggle, which
+     re-applied the old preference and blocked the save.)
+   - ThemeProvider is keyed by userId, so all state here resets
+     automatically when the account changes.
+============================================================ */
+
+const toAppTheme = (value) => (value === "dark" ? "dark" : "light");
+
+function AccountThemePersistence({ userId, children }) {
+  const { theme, setTheme } = useTheme();
+
+  // Latest values in refs so effects can read them without re-running
+  const setThemeRef = useRef(setTheme);
+  setThemeRef.current = setTheme;
+  const themeRef = useRef(theme);
+  themeRef.current = theme;
+
+  const [loadedUserId, setLoadedUserId] = useState(null);
+  const [savedTheme, setSavedTheme] = useState(null); // value the DB currently holds
+  const savingRef = useRef(false);
+
+  const preferenceLoaded = !userId || loadedUserId === userId;
+
+  // 1) Load the saved preference once per user
+  useEffect(() => {
+    if (!userId) {
+      setThemeRef.current("light");
+      return;
+    }
+
+    let cancelled = false;
+    const themeAtRequestStart = themeRef.current;
+
+    async function loadThemePreference() {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("theme_preference")
+        .eq("id", userId)
+        .single();
+
+      if (cancelled) return;
+
+      let baseline;
+
+      if (error) {
+        console.error("Failed to load theme preference:", error);
+        // Never overwrite the DB with a default after a failed load;
+        // later manual changes can still be saved.
+        baseline = toAppTheme(themeRef.current);
+      } else {
+        baseline = toAppTheme(data?.theme_preference);
+
+        // Don't override a manual selection made while loading
+        if (themeRef.current === themeAtRequestStart) {
+          setThemeRef.current(baseline);
+        }
+      }
+
+      setSavedTheme(baseline);
+      setLoadedUserId(userId);
+    }
+
+    loadThemePreference();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [userId]); // intentionally NOT depending on setTheme
+
+  // 2) Save only when the theme differs from what the DB holds
+  useEffect(() => {
+    if (
+      !userId ||
+      !preferenceLoaded ||
+      savedTheme === null ||
+      !["light", "dark"].includes(theme) ||
+      theme === savedTheme ||
+      savingRef.current
+    ) {
+      return;
+    }
+
+    const themeToSave = theme;
+    savingRef.current = true;
+
+    async function saveThemePreference() {
+      // Local session check (no network): the session must still be this user's
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
+      if (session?.user?.id !== userId) {
+        savingRef.current = false;
+        return;
+      }
+
+      const { error } = await supabase.rpc("set_my_theme_preference", {
+        p_theme_preference: themeToSave,
+      });
+
+      savingRef.current = false;
+
+      if (error) {
+        console.error("Failed to save theme preference:", error);
+        return;
+      }
+
+      // Re-runs this effect, so a toggle made mid-save is saved next
+      setSavedTheme(themeToSave);
+    }
+
+    saveThemePreference();
+  }, [userId, preferenceLoaded, theme, savedTheme]);
+
+  if (!preferenceLoaded) return null;
+
+  return children;
+}
+
+function AccountThemeProvider({ children }) {
+  const [userId, setUserId] = useState(null);
+  const [authReady, setAuthReady] = useState(false);
+
+  useEffect(() => {
+    let mounted = true;
+    let authEventReceived = false;
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      authEventReceived = true;
+
+      if (mounted) {
+        setUserId(session?.user?.id || null);
+        setAuthReady(true);
+      }
+    });
+
+    supabase.auth.getSession().then(({ data }) => {
+      if (!mounted) return;
+
+      if (!authEventReceived) {
+        setUserId(data.session?.user?.id || null);
+      }
+
+      setAuthReady(true);
+    });
+
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
+  }, []);
+
+  if (!authReady) return null;
+
+  // key remounts the provider (and resets persistence state) per account
+  return (
+    <ThemeProvider
+      key={userId || "signed-out"}
+      attribute="class"
+      storageKey={`cclms.theme.${userId || "signed-out"}`}
+      defaultTheme="light"
+      enableSystem={false}
+    >
+      <AccountThemePersistence userId={userId}>
+        {children}
+      </AccountThemePersistence>
+    </ThemeProvider>
+  );
 }
 
 function AdminRoute({ children }) {
@@ -167,11 +348,7 @@ function OwnerRoute({ children }) {
 export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <ThemeProvider
-        attribute="class"
-        defaultTheme="light"
-        enableSystem={false}
-      >
+      <AccountThemeProvider>
         <TooltipProvider>
           <BrowserRouter>
             <Toaster position="top-center" />
@@ -249,7 +426,7 @@ export default function App() {
             </Routes>
           </BrowserRouter>
         </TooltipProvider>
-      </ThemeProvider>
+      </AccountThemeProvider>
     </QueryClientProvider>
   );
 }
