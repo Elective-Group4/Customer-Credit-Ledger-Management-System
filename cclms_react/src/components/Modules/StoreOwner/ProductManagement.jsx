@@ -386,6 +386,12 @@ export default function ProductManagement() {
 
       const userId = userData.user.id;
 
+      const { data: ownerData, error: ownerError } = await supabase
+        .from("store_owners")
+        .select("id, profile_id, store_name")
+        .eq("profile_id", userId)
+        .single();
+
       /**
        * Remove the File object before sending
        * the product data to the API.
@@ -418,7 +424,7 @@ export default function ProductManagement() {
 
           const imageUrl = await uploadProductImage(
             image,
-            userId,
+            ownerData.id,
             editingProduct.id,
           );
 
@@ -470,7 +476,7 @@ export default function ProductManagement() {
 
           const imageUrl = await uploadProductImage(
             image,
-            userId,
+            ownerData.id,
             createdProductId,
           );
 
@@ -627,7 +633,14 @@ export default function ProductManagement() {
       key: "status",
       header: "Status",
       cell: (row) => (
-        <Badge variant={row.status === "active" ? "default" : "secondary"}>
+        <Badge
+          variant={row.status === "active" ? "default" : "secondary"}
+          className={
+            row.status === "active"
+              ? "bg-green-500 text-white hover:bg-green-500/90"
+              : "bg-muted text-muted-foreground hover:bg-muted"
+          }
+        >
           {row.status}
         </Badge>
       ),
@@ -657,6 +670,7 @@ export default function ProductManagement() {
           </Button>
 
           <Button
+            className="text-red-500 hover:text-red-600"
             variant="ghost"
             size="icon"
             title={`Delete ${row.name}`}
@@ -791,6 +805,7 @@ export default function ProductManagement() {
                 {/* Upload */}
                 <div className="grid flex-1 gap-2">
                   <Input
+                    className="px-3 cursor-pointer border-dashed bg-transparent text-sm file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-[#D4A017] hover:file:underline disabled:cursor-not-allowed disabled:file:text-muted-foreground"
                     id="product-image"
                     type="file"
                     accept="image/png,image/jpeg,image/webp"

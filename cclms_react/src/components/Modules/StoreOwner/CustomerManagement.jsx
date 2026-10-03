@@ -178,8 +178,8 @@ export default function CustomerManagement() {
         <Badge
           className={
             row.status === "active"
-              ? "bg-green-400/70"
-              : "bg-muted text-muted-foreground"
+              ? "bg-green-500 text-white hover:bg-green-500/90"
+              : "bg-muted text-muted-foreground hover:bg-muted"
           }
           variant={row.status === "active" ? "default" : "secondary"}
         >
@@ -209,7 +209,7 @@ export default function CustomerManagement() {
             <Pencil />
           </Button>
           <Button
-            className="bg-red-400 text-white hover:bg-red-600"
+            className="text-red-500 hover:text-red-600"
             variant="ghost"
             size="icon"
             title={`Delete ${row.name}`}

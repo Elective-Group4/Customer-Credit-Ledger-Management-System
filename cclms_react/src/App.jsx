@@ -11,6 +11,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 // Modules
 import LoginPage from "./components/Modules/Login/LoginPage";
 import LandingPage from "./components/Modules/LandingPage/LandingPage";
+import StoreLoader from "./components/Modules/LandingPage/StoreLoader";
 import AdminDashboard from "./components/Modules/Admin/AdminDashboard";
 import OwnerManagement from "./components/Modules/Admin/OwnerManagement";
 import AdminLayout from "./components/Modules/Admin/AdminLayout";
@@ -34,6 +35,18 @@ const queryClient = new QueryClient();
 const OwnerProfile = lazy(
   () => import("./components/Modules/StoreOwner/OwnerProfile"),
 );
+
+function LandingPageEntry() {
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => setLoading(false), 2800);
+
+    return () => window.clearTimeout(timer);
+  }, []);
+
+  return loading ? <StoreLoader /> : <LandingPage />;
+}
 
 function AdminRoute({ children }) {
   const [status, setStatus] = useState("checking");
@@ -168,7 +181,7 @@ export default function App() {
               DEFAULT
           ================================= */}
 
-              <Route path="/" element={<LandingPage />} />
+              <Route path="/" element={<LandingPageEntry />} />
 
               {/* ================================
               LOGIN

@@ -111,6 +111,126 @@ function toDateInputValue(date) {
   return `${year}-${month}-${day}`;
 }
 
+function getInitials(name = "") {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (!parts.length) return "?";
+  const first = parts[0][0];
+  const last = parts.length > 1 ? parts[parts.length - 1][0] : "";
+  return (first + last).toUpperCase();
+}
+
+/* Decorative barcode derived from the customer code */
+function Barcode({ value }) {
+  const bars = Array.from(String(value || "")).flatMap((ch) => {
+    const c = ch.charCodeAt(0);
+    return [1 + (c % 3), 1 + ((c >> 2) % 2)];
+  });
+  return (
+    <div className="flex h-7 items-stretch gap-[1.5px]" aria-hidden="true">
+      {bars.map((w, i) => (
+        <span
+          key={i}
+          className="bg-foreground/70"
+          style={{ width: `${w}px` }}
+        />
+      ))}
+    </div>
+  );
+}
+
+function StatusPill({ status }) {
+  const active = status === "active";
+  return (
+    <span
+      className={
+        "rounded-sm px-2 py-0.5 text-[11px] font-semibold capitalize " +
+        (active
+          ? "bg-primary-foreground text-primary"
+          : "bg-primary-foreground/20 text-primary-foreground")
+      }
+    >
+      {status}
+    </span>
+  );
+}
+
+function CustomerIdCard({ customer, onSelect }) {
+  const owes = customer.balance > 0;
+  return (
+    <div
+      role="button"
+      tabIndex={0}
+      onClick={onSelect}
+      onKeyDown={(event) => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          onSelect();
+        }
+      }}
+      className="group cursor-pointer overflow-hidden rounded-xl border bg-card shadow-sm transition hover:-translate-y-0.5 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+    >
+      <div className="flex items-center justify-between bg-[#6B4226] px-4 py-2.5 text-primary-foreground">
+        <span className="text-xs font-medium tracking-wide text-primary-foreground/80">
+          Customer credit ID
+        </span>
+        <StatusPill status={customer.status} />
+      </div>
+
+      <div className="flex items-center gap-4 p-4">
+        <div className="flex size-16 shrink-0 items-center justify-center rounded-md bg-muted text-xl font-semibold text-foreground ring-1 ring-border">
+          {getInitials(customer.name)}
+        </div>
+        <div className="min-w-0">
+          <p className="truncate text-base font-semibold text-foreground">
+            {customer.name}
+          </p>
+          <p className="mt-0.5 font-mono text-xs text-muted-foreground">
+            {customer.customerCode}
+          </p>
+        </div>
+      </div>
+
+      <div className="flex items-end justify-between gap-3 border-t border-dashed border-border bg-muted/50 px-4 py-3">
+        <div>
+          <p className="text-xs text-muted-foreground">Outstanding balance</p>
+          <p
+            className={
+              "text-xl font-semibold tabular-nums " +
+              (owes ? "text-foreground" : "text-muted-foreground")
+            }
+          >
+            {formatBalance(customer.balance)}
+          </p>
+        </div>
+        <Barcode value={customer.customerCode} />
+      </div>
+    </div>
+  );
+}
+
+function SummaryStrip({ customers, loading }) {
+  const totalOutstanding = customers.reduce((sum, c) => sum + c.balance, 0);
+  const withBalance = customers.filter((c) => c.balance > 0).length;
+  const active = customers.filter((c) => c.status === "active").length;
+  const items = [
+    { label: "Total outstanding", value: formatBalance(totalOutstanding) },
+    { label: "Customers with balance", value: String(withBalance) },
+    { label: "Active customers", value: String(active) },
+  ];
+  return (
+    <div className="grid grid-cols-1 divide-y overflow-hidden rounded-xl border bg-card sm:grid-cols-3 sm:divide-x sm:divide-y-0">
+      {items.map((item) => (
+        <div key={item.label} className="px-5 py-4">
+          <p className="text-xs text-muted-foreground">{item.label}</p>
+          <p className="mt-1 text-2xl font-semibold tabular-nums text-foreground">
+            {loading ? "—" : item.value}
+          </p>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export default function CreditTab() {
   const { customers, products, credits, payments, loading, error, refresh } =
     useOwnerCredits();
@@ -220,18 +340,19 @@ export default function CreditTab() {
   }
 
   return (
-    <main className="flex flex-1 flex-col gap-7 bg-[#FAFAF9] p-5 md:p-7 dark:bg-background">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+    <main className="flex flex-1 flex-col gap-6 bg-background p-5 md:p-7">
+      {/* Page header */}
+      <div className="flex flex-col gap-4 border-b pb-5 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-[#171717] dark:text-foreground md:text-4xl">
+          <h1 className="text-3xl font-bold tracking-tight text-foreground">
             Credit Ledger
           </h1>
-          <p className="text-muted-foreground">
+          <p className="mt-1 text-muted-foreground">
             Track customer credit and record payments.
           </p>
         </div>
         <Button
-          className="bg-[#D4A017] text-white hover:bg-[#B8890F] h-12"
+          className="h-11 px-5 bg-[#D4A017] hover:bg-[#D4A017]/90 text-white"
           onClick={() => setAddOpen(true)}
           disabled={!customers.length || !products.length}
         >
@@ -239,8 +360,11 @@ export default function CreditTab() {
         </Button>
       </div>
 
+      <SummaryStrip customers={customers} loading={loading} />
+
+      {/* Toolbar */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="relative max-w-md">
+        <div className="relative w-full max-w-md">
           <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             className="pl-9"
@@ -254,10 +378,15 @@ export default function CreditTab() {
           />
         </div>
         <div
-          className="flex items-center gap-1 rounded-lg border p-1"
+          className="flex items-center gap-1 rounded-lg border bg-card p-1"
           aria-label="Customer display mode"
         >
           <Button
+            className={
+              customerView === "card"
+                ? "bg-[#6B4226] text-white hover:bg-[#6B4226]/90 hover:text-white"
+                : ""
+            }
             type="button"
             size="sm"
             variant={customerView === "card" ? "default" : "ghost"}
@@ -269,6 +398,11 @@ export default function CreditTab() {
             <span className="sr-only">Card view</span>
           </Button>
           <Button
+            className={
+              customerView === "table"
+                ? "bg-[#6B4226] text-white hover:bg-[#6B4226]/90 hover:text-white"
+                : ""
+            }
             type="button"
             size="sm"
             variant={customerView === "table" ? "default" : "ghost"}
@@ -290,9 +424,10 @@ export default function CreditTab() {
         </Card>
       )}
 
+      {/* Customers */}
       <section>
         {customerView === "card" ? (
-          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+          <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
             {loading && (
               <Card>
                 <CardContent className="pt-6 text-sm text-muted-foreground">
@@ -309,37 +444,11 @@ export default function CreditTab() {
             )}
             {!loading &&
               filteredCustomers.map((customer) => (
-                <Card
+                <CustomerIdCard
                   key={customer.id}
-                  className="cursor-pointer border-stone-200 bg-white shadow-sm transition-shadow hover:shadow-md dark:border-border dark:bg-card"
-                  onClick={() => setSelectedCustomer(customer)}
-                >
-                  <CardHeader>
-                    <div className="flex items-start justify-between gap-2">
-                      <div>
-                        <CardTitle>{customer.name}</CardTitle>
-                        <CardDescription>
-                          {customer.customerCode}
-                        </CardDescription>
-                      </div>
-                      <Badge
-                        variant={
-                          customer.status === "active" ? "default" : "secondary"
-                        }
-                      >
-                        {customer.status}
-                      </Badge>
-                    </div>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-lg font-semibold">
-                      {formatBalance(customer.balance)}
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      Outstanding balance
-                    </p>
-                  </CardContent>
-                </Card>
+                  customer={customer}
+                  onSelect={() => setSelectedCustomer(customer)}
+                />
               ))}
           </div>
         ) : (
@@ -356,7 +465,8 @@ export default function CreditTab() {
         )}
       </section>
 
-      <Card className="border-stone-200 bg-white shadow-sm dark:border-border dark:bg-card">
+      {/* Credit entries */}
+      <Card className="rounded-xl shadow-sm">
         <CardHeader>
           <CardTitle>Credit Entries</CardTitle>
           <CardDescription>
@@ -377,6 +487,7 @@ export default function CreditTab() {
         </CardContent>
       </Card>
 
+      {/* Add credit dialog */}
       <Dialog open={addOpen} onOpenChange={setAddOpen}>
         <DialogContent>
           <DialogHeader>
@@ -502,7 +613,11 @@ export default function CreditTab() {
               >
                 Cancel
               </Button>
-              <Button type="submit" disabled={saving}>
+              <Button
+                className="bg-[#D4A017] hover:bg-[#D4A017]/90 text-white"
+                type="submit"
+                disabled={saving}
+              >
                 {saving ? "Saving..." : "Add Credit"}
               </Button>
             </DialogFooter>
@@ -510,6 +625,7 @@ export default function CreditTab() {
         </DialogContent>
       </Dialog>
 
+      {/* Customer detail dialog */}
       <Dialog
         open={Boolean(selectedCustomer)}
         onOpenChange={(open) => {
@@ -518,16 +634,32 @@ export default function CreditTab() {
       >
         <DialogContent className="max-w-3xl">
           <DialogHeader>
-            <DialogTitle>{currentCustomer?.name}</DialogTitle>
-            <DialogDescription>
-              {currentCustomer?.customerCode} · Current balance{" "}
-              {currentCustomer ? formatBalance(currentCustomer.balance) : ""}
-            </DialogDescription>
+            <div className="flex items-center gap-4 pr-6">
+              <div className="flex size-14 shrink-0 items-center justify-center rounded-md bg-[#D4A017] text-lg font-semibold text-white">
+                {getInitials(currentCustomer?.name)}
+              </div>
+              <div className="min-w-0 text-left">
+                <DialogTitle className="truncate">
+                  {currentCustomer?.name}
+                </DialogTitle>
+                <DialogDescription>
+                  <span className="font-mono">
+                    {currentCustomer?.customerCode}
+                  </span>{" "}
+                  · Current balance{" "}
+                  <span className="font-semibold text-foreground">
+                    {currentCustomer
+                      ? formatBalance(currentCustomer.balance)
+                      : ""}
+                  </span>
+                </DialogDescription>
+              </div>
+            </div>
           </DialogHeader>
           <div className="overflow-x-auto rounded-md border">
             <Table>
               <TableHeader>
-                <TableRow>
+                <TableRow className="bg-muted/50 hover:bg-muted/50">
                   {ledgerColumns.map((column) => (
                     <TableHead key={column.key}>{column.header}</TableHead>
                   ))}
@@ -563,7 +695,7 @@ export default function CreditTab() {
             <div className="overflow-x-auto rounded-md border">
               <Table>
                 <TableHeader>
-                  <TableRow>
+                  <TableRow className="bg-muted/50 hover:bg-muted/50">
                     <TableHead>Date</TableHead>
                     <TableHead>Type</TableHead>
                     <TableHead>Amount</TableHead>
