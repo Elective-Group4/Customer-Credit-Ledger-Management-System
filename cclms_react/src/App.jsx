@@ -170,8 +170,6 @@ function AccountThemePersistence({ userId, children }) {
     saveThemePreference();
   }, [userId, preferenceLoaded, theme, savedTheme]);
 
-  if (!preferenceLoaded) return null;
-
   return children;
 }
 
@@ -347,9 +345,9 @@ function OwnerRoute({ children }) {
 export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <AccountThemeProvider>
-        <TooltipProvider>
-          <BrowserRouter>
+      <BrowserRouter>
+        <AccountThemeProvider>
+          <TooltipProvider>
             <Toaster position="top-center" />
 
             <Routes>
@@ -418,9 +416,9 @@ export default function App() {
 
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
-          </BrowserRouter>
-        </TooltipProvider>
-      </AccountThemeProvider>
+          </TooltipProvider>
+        </AccountThemeProvider>
+      </BrowserRouter>
     </QueryClientProvider>
   );
 }
