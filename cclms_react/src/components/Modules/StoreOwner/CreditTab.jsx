@@ -1,13 +1,14 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Grid2X2, List, Search, Plus } from "lucide-react";
+import { Grid2X2, List, Plus, ScanBarcode, Search } from "lucide-react";
 import { toast } from "sonner";
 
 import { useOwnerCredits } from "@/hooks/use-owner-credits";
 import { ownerApi } from "@/lib/api/owner";
 import { creditSchema, paymentSchema } from "@/lib/schemas/owner";
 import { DataTable } from "@/components/owner/data-table";
+import { BarcodeScannerDialog } from "@/components/Modules/StoreOwner/ProductBarcodeScanner.jsx";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -27,12 +28,6 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Calendar } from "@/components/ui/calendar";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
 import {
   Select,
   SelectContent,
@@ -49,6 +44,29 @@ import {
   TableRow,
 } from "@/components/ui/table";
 
+function formatBalance(value) {
+  return `PHP ${value.toLocaleString("en-PH", { minimumFractionDigits: 2 })}`;
+}
+
+function formatDateTime(value, withSeconds = false) {
+  if (!value) return "-";
+
+  return new Date(value).toLocaleString("en-PH", {
+    dateStyle: "medium",
+    timeStyle: withSeconds ? "medium" : "short",
+  });
+}
+
+/**
+ * Barcodes can differ only by leading zeros (UPC-A vs EAN-13),
+ * so numeric codes are compared without them.
+ */
+function normalizeCode(code) {
+  const value = String(code ?? "").trim();
+
+  return /^\d+$/.test(value) ? value.replace(/^0+/, "") : value.toLowerCase();
+}
+
 const creditColumns = [
   { key: "id", header: "ID Code" },
   { key: "customerName", header: "Customer" },
@@ -60,8 +78,8 @@ const creditColumns = [
   },
   {
     key: "createdAt",
-    header: "Date",
-    cell: (row) => new Date(row.createdAt).toLocaleDateString("en-PH"),
+    header: "Date & Time",
+    cell: (row) => formatDateTime(row.createdAt),
   },
 ];
 
@@ -78,38 +96,12 @@ const ledgerColumns = [
     header: "Subtotal",
     cell: (row) => `PHP ${row.subtotal.toFixed(2)}`,
   },
-];
-
-const customerColumns = [
-  { key: "customerCode", header: "ID#" },
-  { key: "name", header: "Customer" },
   {
-    key: "balance",
-    header: "Credit Balance",
-    cell: (row) => formatBalance(row.balance),
-  },
-  {
-    key: "status",
-    header: "Status",
-    cell: (row) => (
-      <Badge variant={row.status === "active" ? "default" : "secondary"}>
-        {row.status}
-      </Badge>
-    ),
+    key: "createdAt",
+    header: "Date & Time",
+    cell: (row) => formatDateTime(row.createdAt),
   },
 ];
-
-function formatBalance(value) {
-  return `PHP ${value.toLocaleString("en-PH", { minimumFractionDigits: 2 })}`;
-}
-
-function toDateInputValue(date) {
-  if (!date) return "";
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
-}
 
 function getInitials(name = "") {
   const parts = name.trim().split(/\s+/).filter(Boolean);
@@ -117,6 +109,22 @@ function getInitials(name = "") {
   const first = parts[0][0];
   const last = parts.length > 1 ? parts[parts.length - 1][0] : "";
   return (first + last).toUpperCase();
+}
+
+/* Live clock shown in the Add Credit dialog */
+function LiveTimestamp() {
+  const [now, setNow] = useState(() => new Date());
+
+  useEffect(() => {
+    const timer = setInterval(() => setNow(new Date()), 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  return (
+    <div className="flex h-9 items-center rounded-md border bg-muted px-3 text-sm tabular-nums text-muted-foreground">
+      {formatDateTime(now, true)}
+    </div>
+  );
 }
 
 /* Decorative barcode derived from the customer code */
@@ -154,56 +162,236 @@ function StatusPill({ status }) {
   );
 }
 
-function CustomerIdCard({ customer, onSelect }) {
+function CustomerIdCard({
+  customer,
+  onSelect,
+  onAddCredit,
+  addDisabled,
+  addDisabledReason,
+}) {
   const owes = customer.balance > 0;
+
   return (
-    <div
-      role="button"
-      tabIndex={0}
-      onClick={onSelect}
-      onKeyDown={(event) => {
-        if (event.key === "Enter" || event.key === " ") {
-          event.preventDefault();
-          onSelect();
-        }
-      }}
-      className="group cursor-pointer overflow-hidden rounded-xl border bg-card shadow-sm transition hover:-translate-y-0.5 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-    >
-      <div className="flex items-center justify-between bg-[#6B4226] px-4 py-2.5 text-primary-foreground">
-        <span className="text-xs font-medium tracking-wide text-primary-foreground/80">
-          Customer credit ID
-        </span>
-        <StatusPill status={customer.status} />
+    <div className="overflow-hidden rounded-xl border bg-card shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
+      {/* Click to open the customer's pop-up card */}
+      <div
+        role="button"
+        tabIndex={0}
+        onClick={onSelect}
+        onKeyDown={(event) => {
+          if (event.key === "Enter" || event.key === " ") {
+            event.preventDefault();
+            onSelect();
+          }
+        }}
+        className="cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring"
+      >
+        <div className="flex items-center justify-between bg-[#6B4226] px-4 py-2.5 text-primary-foreground">
+          <span className="text-xs font-medium tracking-wide text-primary-foreground/80">
+            Customer credit ID
+          </span>
+          <StatusPill status={customer.status} />
+        </div>
+
+        <div className="flex items-center gap-4 p-4">
+          <div className="flex size-16 shrink-0 items-center justify-center rounded-md bg-muted text-xl font-semibold text-foreground ring-1 ring-border">
+            {getInitials(customer.name)}
+          </div>
+          <div className="min-w-0">
+            <p className="truncate text-base font-semibold text-foreground">
+              {customer.name}
+            </p>
+            <p className="mt-0.5 font-mono text-xs text-muted-foreground">
+              {customer.customerCode}
+            </p>
+          </div>
+        </div>
+
+        <div className="flex items-end justify-between gap-3 border-t border-dashed border-border bg-muted/50 px-4 py-3">
+          <div>
+            <p className="text-xs text-muted-foreground">Outstanding balance</p>
+            <p
+              className={
+                "text-xl font-semibold tabular-nums " +
+                (owes ? "text-foreground" : "text-muted-foreground")
+              }
+            >
+              {formatBalance(customer.balance)}
+            </p>
+          </div>
+          <Barcode value={customer.customerCode} />
+        </div>
       </div>
 
-      <div className="flex items-center gap-4 p-4">
-        <div className="flex size-16 shrink-0 items-center justify-center rounded-md bg-muted text-xl font-semibold text-foreground ring-1 ring-border">
-          {getInitials(customer.name)}
-        </div>
-        <div className="min-w-0">
-          <p className="truncate text-base font-semibold text-foreground">
-            {customer.name}
-          </p>
-          <p className="mt-0.5 font-mono text-xs text-muted-foreground">
-            {customer.customerCode}
-          </p>
-        </div>
+      {/* Add credit for this customer */}
+      <div className="border-t p-3">
+        <Button
+          type="button"
+          className="w-full bg-[#D4A017] text-white hover:bg-[#D4A017]/90"
+          disabled={addDisabled}
+          title={addDisabled ? addDisabledReason : undefined}
+          onClick={onAddCredit}
+        >
+          <Plus /> Add Credit
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Details shown inside the pop-up card: credit items table,
+ * payment history table (side by side on large screens) and
+ * the payment controls.
+ */
+function CustomerDetails({ customer, entries, payments, saving, onPay }) {
+  const [partialAmount, setPartialAmount] = useState("");
+  const [paymentError, setPaymentError] = useState("");
+
+  // Ledger rows carry the time the credit was made
+  const items = entries.flatMap((entry) =>
+    entry.items.map((item) => ({ ...item, createdAt: entry.createdAt })),
+  );
+
+  async function handlePay(amount, paymentType) {
+    const result = await onPay(customer, amount, paymentType);
+
+    setPaymentError(result.error);
+
+    if (result.ok && paymentType === "partial") {
+      setPartialAmount("");
+    }
+  }
+
+  return (
+    <div className="grid gap-5">
+      <div className="grid gap-5 lg:grid-cols-5">
+        {/* Credit items */}
+        <section className="grid content-start gap-2 lg:col-span-3">
+          <h3 className="flex items-center justify-between text-sm font-medium">
+            Credit items
+            <span className="text-xs font-normal text-muted-foreground">
+              {items.length}
+            </span>
+          </h3>
+
+          <div className="max-h-72 overflow-auto rounded-md border">
+            <Table>
+              <TableHeader>
+                <TableRow className="bg-muted/50 hover:bg-muted/50">
+                  {ledgerColumns.map((column) => (
+                    <TableHead key={column.key}>{column.header}</TableHead>
+                  ))}
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {items.map((item) => (
+                  <TableRow key={item.id}>
+                    {ledgerColumns.map((column) => (
+                      <TableCell key={column.key}>
+                        {column.cell ? column.cell(item) : item[column.key]}
+                      </TableCell>
+                    ))}
+                  </TableRow>
+                ))}
+                {items.length === 0 && (
+                  <TableRow>
+                    <TableCell
+                      colSpan={ledgerColumns.length}
+                      className="h-20 text-center text-muted-foreground"
+                    >
+                      No credit products found.
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </div>
+        </section>
+
+        {/* Payment history */}
+        <section className="grid content-start gap-2 lg:col-span-2">
+          <h3 className="flex items-center justify-between text-sm font-medium">
+            Payment history
+            <span className="text-xs font-normal text-muted-foreground">
+              {payments.length}
+            </span>
+          </h3>
+
+          <div className="max-h-72 overflow-auto rounded-md border">
+            <Table>
+              <TableHeader>
+                <TableRow className="bg-muted/50 hover:bg-muted/50">
+                  <TableHead>Date &amp; Time</TableHead>
+                  <TableHead>Type</TableHead>
+                  <TableHead>Amount</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {payments.map((payment) => (
+                  <TableRow key={payment.id}>
+                    <TableCell>{formatDateTime(payment.createdAt)}</TableCell>
+                    <TableCell className="capitalize">
+                      {payment.paymentType}
+                    </TableCell>
+                    <TableCell>{formatBalance(payment.amount)}</TableCell>
+                  </TableRow>
+                ))}
+                {payments.length === 0 && (
+                  <TableRow>
+                    <TableCell
+                      colSpan={3}
+                      className="h-20 text-center text-muted-foreground"
+                    >
+                      No payments recorded.
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </div>
+        </section>
       </div>
 
-      <div className="flex items-end justify-between gap-3 border-t border-dashed border-border bg-muted/50 px-4 py-3">
-        <div>
-          <p className="text-xs text-muted-foreground">Outstanding balance</p>
-          <p
-            className={
-              "text-xl font-semibold tabular-nums " +
-              (owes ? "text-foreground" : "text-muted-foreground")
-            }
+      {/* Payment controls */}
+      {customer.balance > 0 && (
+        <div className="grid gap-3 border-t pt-4 sm:grid-cols-[auto_1fr_auto] sm:items-end">
+          <Button
+            type="button"
+            onClick={() => handlePay(customer.balance, "full")}
+            disabled={saving}
           >
-            {formatBalance(customer.balance)}
-          </p>
+            Pay Full
+          </Button>
+
+          <div className="grid gap-2">
+            <Label htmlFor={`partial-payment-${customer.id}`}>
+              Partial payment
+            </Label>
+            <Input
+              id={`partial-payment-${customer.id}`}
+              type="number"
+              min="0.01"
+              step="0.01"
+              value={partialAmount}
+              onChange={(event) => setPartialAmount(event.target.value)}
+              placeholder="Enter amount"
+            />
+            {paymentError && (
+              <p className="text-sm text-destructive">{paymentError}</p>
+            )}
+          </div>
+
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => handlePay(partialAmount, "partial")}
+            disabled={saving}
+          >
+            Record Payment
+          </Button>
         </div>
-        <Barcode value={customer.customerCode} />
-      </div>
+      )}
     </div>
   );
 }
@@ -239,9 +427,8 @@ export default function CreditTab() {
   const [customerPage, setCustomerPage] = useState(1);
   const [customerView, setCustomerView] = useState("card");
   const [addOpen, setAddOpen] = useState(false);
+  const [scannerOpen, setScannerOpen] = useState(false);
   const [selectedCustomer, setSelectedCustomer] = useState(null);
-  const [partialAmount, setPartialAmount] = useState("");
-  const [paymentError, setPaymentError] = useState("");
   const [saving, setSaving] = useState(false);
   const {
     register,
@@ -257,10 +444,17 @@ export default function CreditTab() {
   const selectedProductId = useWatch({ control, name: "productId" });
   const selectedCustomerId = useWatch({ control, name: "customerId" });
   const quantity = useWatch({ control, name: "quantity" });
-  const dueDate = useWatch({ control, name: "dueDate" });
+
   const selectedProduct = products.find(
     (product) => product.id === selectedProductId,
   );
+  const creditCustomer = customers.find(
+    (customer) => customer.id === selectedCustomerId,
+  );
+  const hasActiveProducts = products.some(
+    (product) => product.status === "active",
+  );
+
   const filteredCustomers = useMemo(() => {
     const query = search.trim().toLowerCase();
     if (!query) return customers;
@@ -270,12 +464,8 @@ export default function CreditTab() {
         customer.customerCode.toLowerCase().includes(query),
     );
   }, [customers, search]);
-  const customerCredits = selectedCustomer
-    ? credits.filter((entry) => entry.customerId === selectedCustomer.id)
-    : [];
-  const customerPayments = selectedCustomer
-    ? payments.filter((payment) => payment.customerId === selectedCustomer.id)
-    : [];
+
+  // Latest data for the pop-up (balance changes after payments)
   const currentCustomer = selectedCustomer
     ? customers.find((customer) => customer.id === selectedCustomer.id) ||
       selectedCustomer
@@ -287,6 +477,66 @@ export default function CreditTab() {
     (customer) => customer.id === selectedCustomerId,
   );
 
+  function getAddCreditBlockReason(customer) {
+    if (customer.status !== "active") {
+      return "Inactive customers can't receive credit.";
+    }
+
+    if (!hasActiveProducts) {
+      return "Add an active product first.";
+    }
+
+    return "";
+  }
+
+  function openAddCredit(customer) {
+    reset({
+      customerId: customer.id,
+      productId: "",
+      quantity: 1,
+      dueDate: "",
+    });
+
+    setAddOpen(true);
+  }
+
+  function handleProductScanned(code) {
+    setScannerOpen(false);
+
+    const scanned = normalizeCode(code);
+    const product = products.find(
+      (item) => normalizeCode(item.idCode) === scanned,
+    );
+
+    if (!product) {
+      toast.error("Product not found", {
+        description: `No product has the ID code ${String(code).trim()}.`,
+      });
+      return;
+    }
+
+    if (product.status !== "active") {
+      toast.error("Product is inactive", {
+        description: `${product.name} can't be added to credit right now.`,
+      });
+      return;
+    }
+
+    // Scanning the same product again adds one more
+    if (product.id === selectedProductId) {
+      const nextQuantity = Number(quantity || 1) + 1;
+
+      setValue("quantity", nextQuantity, { shouldValidate: true });
+
+      toast.success(`${product.name} × ${nextQuantity}`);
+      return;
+    }
+
+    setValue("productId", product.id, { shouldValidate: true });
+
+    toast.success("Product selected", { description: product.name });
+  }
+
   async function submitCredit(values) {
     const customer = customers.find((item) => item.id === values.customerId);
     if (customer?.status !== "active") {
@@ -296,7 +546,8 @@ export default function CreditTab() {
 
     setSaving(true);
     try {
-      await ownerApi.createCredit(values);
+      // No due date: the entry is stamped with the time it is created
+      await ownerApi.createCredit({ ...values, dueDate: "" });
       toast.success("Credit added", {
         description: "The customer balance has been updated.",
       });
@@ -304,52 +555,115 @@ export default function CreditTab() {
       setAddOpen(false);
       await refresh();
     } catch (saveError) {
+      console.error("Create credit error:", saveError);
       toast.error("Unable to add credit", {
-        description:
-          saveError instanceof Error ? saveError.message : "Please try again.",
+        description: saveError?.message || "Please try again.",
       });
     } finally {
       setSaving(false);
     }
   }
 
-  async function submitPayment(amount, paymentType) {
-    if (!currentCustomer) return;
+  /**
+   * Returns { ok, error }. `error` is a validation message to show
+   * under the payment field; API failures are shown as a toast.
+   */
+  async function recordPayment(customer, amount, paymentType) {
     const parsed = paymentSchema.safeParse({ amount });
+
     if (!parsed.success) {
-      setPaymentError(
-        parsed.error.issues[0]?.message || "Enter a valid payment amount.",
-      );
-      return;
+      return {
+        ok: false,
+        error:
+          parsed.error.issues[0]?.message || "Enter a valid payment amount.",
+      };
     }
-    if (parsed.data.amount > currentCustomer.balance) {
-      setPaymentError("Payment cannot exceed the outstanding balance.");
-      return;
+
+    if (parsed.data.amount > customer.balance) {
+      return {
+        ok: false,
+        error: "Payment cannot exceed the outstanding balance.",
+      };
     }
-    setPaymentError("");
+
     setSaving(true);
     try {
       await ownerApi.createPayment({
-        customerId: currentCustomer.id,
+        customerId: customer.id,
         amount: parsed.data.amount,
         paymentType,
       });
+
       toast.success(
         paymentType === "full"
           ? "Balance paid in full"
           : "Partial payment recorded",
       );
-      setPartialAmount("");
+
       await refresh();
+
+      return { ok: true, error: "" };
     } catch (saveError) {
+      console.error("Create payment error:", saveError);
       toast.error("Unable to record payment", {
-        description:
-          saveError instanceof Error ? saveError.message : "Please try again.",
+        description: saveError?.message || "Please try again.",
       });
+
+      return { ok: false, error: "" };
     } finally {
       setSaving(false);
     }
   }
+
+  const customerColumns = [
+    { key: "customerCode", header: "ID#" },
+    { key: "name", header: "Customer" },
+    {
+      key: "balance",
+      header: "Credit Balance",
+      cell: (row) => formatBalance(row.balance),
+    },
+    {
+      key: "status",
+      header: "Status",
+      cell: (row) => (
+        <Badge variant={row.status === "active" ? "default" : "secondary"}>
+          {row.status}
+        </Badge>
+      ),
+    },
+    {
+      key: "actions",
+      header: "Actions",
+      cell: (row) => {
+        const blockReason = getAddCreditBlockReason(row);
+
+        return (
+          <div className="flex gap-2">
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              onClick={() => setSelectedCustomer(row)}
+            >
+              View
+            </Button>
+
+            <Button
+              type="button"
+              size="sm"
+              className="bg-[#D4A017] text-white hover:bg-[#D4A017]/90"
+              disabled={Boolean(blockReason)}
+              title={blockReason || undefined}
+              onClick={() => openAddCredit(row)}
+            >
+              <Plus /> Add Credit
+            </Button>
+          </div>
+        );
+      },
+    },
+  ];
 
   return (
     <main className="flex flex-1 flex-col gap-6 bg-background p-5 md:p-7">
@@ -455,13 +769,20 @@ export default function CreditTab() {
               </Card>
             )}
             {!loading &&
-              filteredCustomers.map((customer) => (
-                <CustomerIdCard
-                  key={customer.id}
-                  customer={customer}
-                  onSelect={() => setSelectedCustomer(customer)}
-                />
-              ))}
+              filteredCustomers.map((customer) => {
+                const blockReason = getAddCreditBlockReason(customer);
+
+                return (
+                  <CustomerIdCard
+                    key={customer.id}
+                    customer={customer}
+                    onSelect={() => setSelectedCustomer(customer)}
+                    onAddCredit={() => openAddCredit(customer)}
+                    addDisabled={Boolean(blockReason)}
+                    addDisabledReason={blockReason}
+                  />
+                );
+              })}
           </div>
         ) : (
           <DataTable
@@ -505,9 +826,10 @@ export default function CreditTab() {
           <DialogHeader>
             <DialogTitle>Add Credit</DialogTitle>
             <DialogDescription>
-              Select the customer and product purchased on credit.
+              Record a product purchased on credit for this customer.
             </DialogDescription>
           </DialogHeader>
+
           <form className="grid gap-4" onSubmit={handleSubmit(submitCredit)}>
             <div className="grid gap-2">
               <Label htmlFor="credit-customer">Customer</Label>
@@ -534,33 +856,58 @@ export default function CreditTab() {
                 </p>
               )}
             </div>
+            {errors.customerId && (
+              <p className="text-sm text-destructive">
+                {errors.customerId.message}
+              </p>
+            )}
+
+            {/* Product + scan */}
             <div className="grid gap-2">
               <Label htmlFor="credit-product">Product</Label>
-              <Select
-                value={selectedProductId}
-                onValueChange={(value) =>
-                  setValue("productId", value, { shouldValidate: true })
-                }
-              >
-                <SelectTrigger id="credit-product" className="w-full">
-                  <SelectValue placeholder="Choose a product" />
-                </SelectTrigger>
-                <SelectContent>
-                  {products
-                    .filter((product) => product.status === "active")
-                    .map((product) => (
-                      <SelectItem key={product.id} value={product.id}>
-                        {product.name} ({formatBalance(product.price)})
-                      </SelectItem>
-                    ))}
-                </SelectContent>
-              </Select>
+              <div className="flex gap-2">
+                <Select
+                  value={selectedProductId}
+                  onValueChange={(value) =>
+                    setValue("productId", value, { shouldValidate: true })
+                  }
+                >
+                  <SelectTrigger id="credit-product" className="flex-1">
+                    <SelectValue placeholder="Choose or scan a product" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {products
+                      .filter((product) => product.status === "active")
+                      .map((product) => (
+                        <SelectItem key={product.id} value={product.id}>
+                          {product.name} ({formatBalance(product.price)})
+                        </SelectItem>
+                      ))}
+                  </SelectContent>
+                </Select>
+
+                <Button
+                  type="button"
+                  variant="outline"
+                  disabled={saving}
+                  onClick={(event) => {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    setScannerOpen(true);
+                  }}
+                >
+                  <ScanBarcode />
+                  Scan
+                </Button>
+              </div>
               {errors.productId && (
                 <p className="text-sm text-destructive">
                   {errors.productId.message}
                 </p>
               )}
             </div>
+
+            {/* Quantity */}
             <div className="grid gap-2">
               <Label htmlFor="credit-quantity">Quantity</Label>
               <Input
@@ -581,42 +928,16 @@ export default function CreditTab() {
                 </p>
               )}
             </div>
+
+            {/* Timestamp */}
             <div className="grid gap-2">
-              <Label>Due date</Label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    className="w-full justify-start font-normal"
-                  >
-                    {dueDate
-                      ? new Date(`${dueDate}T00:00:00`).toLocaleDateString(
-                          "en-PH",
-                        )
-                      : "Choose a due date"}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0">
-                  <Calendar
-                    mode="single"
-                    selected={
-                      dueDate ? new Date(`${dueDate}T00:00:00`) : undefined
-                    }
-                    onSelect={(date) =>
-                      setValue("dueDate", toDateInputValue(date), {
-                        shouldValidate: true,
-                      })
-                    }
-                  />
-                </PopoverContent>
-              </Popover>
-              {errors.dueDate && (
-                <p className="text-sm text-destructive">
-                  {errors.dueDate.message}
-                </p>
-              )}
+              <Label>Date &amp; time</Label>
+              <LiveTimestamp />
+              <p className="text-xs text-muted-foreground">
+                Recorded automatically when you save.
+              </p>
             </div>
+
             <DialogFooter>
               <Button
                 type="button"
@@ -634,144 +955,85 @@ export default function CreditTab() {
               </Button>
             </DialogFooter>
           </form>
+
+          {/* Outside the form so its buttons can't submit it */}
+          <BarcodeScannerDialog
+            open={scannerOpen}
+            onOpenChange={setScannerOpen}
+            onDetected={handleProductScanned}
+          />
         </DialogContent>
       </Dialog>
 
-      {/* Customer detail dialog */}
+      {/* Customer pop-up card (wide, so every table fits) */}
       <Dialog
         open={Boolean(selectedCustomer)}
         onOpenChange={(open) => {
           if (!open) setSelectedCustomer(null);
         }}
       >
-        <DialogContent className="max-w-3xl">
-          <DialogHeader>
-            <div className="flex items-center gap-4 pr-6">
-              <div className="flex size-14 shrink-0 items-center justify-center rounded-md bg-[#D4A017] text-lg font-semibold text-white">
-                {getInitials(currentCustomer?.name)}
+        <DialogContent className="max-h-[90vh] gap-0 overflow-y-auto rounded-xl p-0 sm:max-w-5xl [&>button]:text-white">
+          {currentCustomer && (
+            <>
+              {/* Card header bar */}
+              <div className="flex items-center justify-between bg-[#6B4226] py-3 pl-5 pr-14 text-primary-foreground">
+                <span className="text-xs font-medium tracking-wide text-primary-foreground/80">
+                  Customer credit ID
+                </span>
+                <StatusPill status={currentCustomer.status} />
               </div>
-              <div className="min-w-0 text-left">
-                <DialogTitle className="truncate">
-                  {currentCustomer?.name}
-                </DialogTitle>
-                <DialogDescription>
-                  <span className="font-mono">
-                    {currentCustomer?.customerCode}
-                  </span>{" "}
-                  · Current balance{" "}
-                  <span className="font-semibold text-foreground">
-                    {currentCustomer
-                      ? formatBalance(currentCustomer.balance)
-                      : ""}
-                  </span>
-                </DialogDescription>
+
+              {/* Identity */}
+              <div className="flex items-center gap-4 p-5">
+                <div className="flex size-16 shrink-0 items-center justify-center rounded-md bg-muted text-xl font-semibold text-foreground ring-1 ring-border">
+                  {getInitials(currentCustomer.name)}
+                </div>
+                <div className="min-w-0 text-left">
+                  <DialogTitle className="truncate text-lg">
+                    {currentCustomer.name}
+                  </DialogTitle>
+                  <DialogDescription className="font-mono text-xs">
+                    {currentCustomer.customerCode}
+                  </DialogDescription>
+                </div>
               </div>
-            </div>
-          </DialogHeader>
-          <div className="overflow-x-auto rounded-md border">
-            <Table>
-              <TableHeader>
-                <TableRow className="bg-muted/50 hover:bg-muted/50">
-                  {ledgerColumns.map((column) => (
-                    <TableHead key={column.key}>{column.header}</TableHead>
-                  ))}
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {customerCredits
-                  .flatMap((entry) => entry.items)
-                  .map((item) => (
-                    <TableRow key={item.id}>
-                      {ledgerColumns.map((column) => (
-                        <TableCell key={column.key}>
-                          {column.cell ? column.cell(item) : item[column.key]}
-                        </TableCell>
-                      ))}
-                    </TableRow>
-                  ))}
-                {customerCredits.length === 0 && (
-                  <TableRow>
-                    <TableCell
-                      colSpan={4}
-                      className="h-20 text-center text-muted-foreground"
-                    >
-                      No credit products found.
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
-          </div>
-          <div className="grid gap-2">
-            <h3 className="text-sm font-medium">Payment History</h3>
-            <div className="overflow-x-auto rounded-md border">
-              <Table>
-                <TableHeader>
-                  <TableRow className="bg-muted/50 hover:bg-muted/50">
-                    <TableHead>Date</TableHead>
-                    <TableHead>Type</TableHead>
-                    <TableHead>Amount</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {customerPayments.map((payment) => (
-                    <TableRow key={payment.id}>
-                      <TableCell>
-                        {new Date(payment.createdAt).toLocaleDateString(
-                          "en-PH",
-                        )}
-                      </TableCell>
-                      <TableCell className="capitalize">
-                        {payment.paymentType}
-                      </TableCell>
-                      <TableCell>{formatBalance(payment.amount)}</TableCell>
-                    </TableRow>
-                  ))}
-                  {customerPayments.length === 0 && (
-                    <TableRow>
-                      <TableCell
-                        colSpan={3}
-                        className="h-16 text-center text-muted-foreground"
-                      >
-                        No payments recorded.
-                      </TableCell>
-                    </TableRow>
+
+              {/* Balance strip */}
+              <div className="flex items-end justify-between gap-3 border-y border-dashed border-border bg-muted/50 px-5 py-3">
+                <div>
+                  <p className="text-xs text-muted-foreground">
+                    Outstanding balance
+                  </p>
+                  <p
+                    className={
+                      "text-xl font-semibold tabular-nums " +
+                      (currentCustomer.balance > 0
+                        ? "text-foreground"
+                        : "text-muted-foreground")
+                    }
+                  >
+                    {formatBalance(currentCustomer.balance)}
+                  </p>
+                </div>
+                <Barcode value={currentCustomer.customerCode} />
+              </div>
+
+              {/* Tables + payment controls */}
+              <div className="p-5">
+                <CustomerDetails
+                  key={currentCustomer.id}
+                  customer={currentCustomer}
+                  entries={credits.filter(
+                    (entry) => entry.customerId === currentCustomer.id,
                   )}
-                </TableBody>
-              </Table>
-            </div>
-          </div>
-          {currentCustomer && currentCustomer.balance > 0 && (
-            <div className="grid gap-3 border-t pt-4 sm:grid-cols-[auto_1fr_auto] sm:items-end">
-              <Button
-                onClick={() => submitPayment(currentCustomer.balance, "full")}
-                disabled={saving}
-              >
-                Pay Full
-              </Button>
-              <div className="grid gap-2">
-                <Label htmlFor="partial-payment">Partial payment</Label>
-                <Input
-                  id="partial-payment"
-                  type="number"
-                  min="0.01"
-                  step="0.01"
-                  value={partialAmount}
-                  onChange={(event) => setPartialAmount(event.target.value)}
-                  placeholder="Enter amount"
+                  payments={payments.filter(
+                    (payment) => payment.customerId === currentCustomer.id,
+                  )}
+                  saving={saving}
+                  onPay={recordPayment}
                 />
-                {paymentError && (
-                  <p className="text-sm text-destructive">{paymentError}</p>
-                )}
               </div>
-              <Button
-                variant="outline"
-                onClick={() => submitPayment(partialAmount, "partial")}
-                disabled={saving}
-              >
-                Record Payment
-              </Button>
-            </div>
+            </>
           )}
         </DialogContent>
       </Dialog>

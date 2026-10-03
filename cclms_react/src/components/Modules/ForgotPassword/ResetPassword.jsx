@@ -1,6 +1,6 @@
 import { ArrowLeft, Eye, EyeOff, KeyRound, LockKeyhole } from "lucide-react";
 import { useEffect, useState } from "react";
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 
 import Logo from "@/assets/images/logo_sarisari.png";
@@ -254,8 +254,7 @@ function ResetPasswordForm({ email, className, ...props }) {
 }
 
 export default function ResetPasswordPage() {
-  const location = useLocation();
-  const email = location.state?.email;
+  const [email, setEmail] = useState("");
   const [isCheckingSession, setIsCheckingSession] = useState(true);
   const [hasRecoverySession, setHasRecoverySession] = useState(false);
   const navigate = useNavigate();
@@ -275,11 +274,7 @@ export default function ResetPasswordPage() {
         return;
       }
 
-      if (!email) {
-        navigate("/forgot-password", { replace: true });
-        return;
-      }
-
+      setEmail(session.user.email || "your account");
       setHasRecoverySession(true);
       setIsCheckingSession(false);
     }

@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { useOwnerCustomers } from "@/hooks/use-owner-customers";
 import { ownerApi } from "@/lib/api/owner";
 import { customerSchema } from "@/lib/schemas/owner";
+import { cn } from "@/lib/utils";
 import { DataTable } from "@/components/owner/data-table";
 import {
   AlertDialog,
@@ -36,7 +37,6 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { cn } from "@/lib/utils";
 
 import { Controller, useForm } from "react-hook-form";
 
@@ -47,6 +47,39 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+
+const phoneNumberPattern = /^\+63 9\d{9}$/;
+
+function formatPhoneNumber(value = "") {
+  const digits = value.replace(/\D/g, "");
+
+  if (/^09\d{9}$/.test(digits)) {
+    return `+63 ${digits.slice(1)}`;
+  }
+
+  if (/^639\d{9}$/.test(digits)) {
+    return `+63 ${digits.slice(2)}`;
+  }
+
+  return value.trim();
+}
+
+function getLocalDigits(value = "") {
+  let digits = value.replace(/\D/g, "");
+
+  if (digits.startsWith("63")) {
+    digits = digits.slice(2);
+  } else if (digits.startsWith("0")) {
+    digits = digits.slice(1);
+  }
+
+  digits = digits.slice(0, 10);
+
+  // Philippine mobile numbers always start with 9
+  if (digits && digits[0] !== "9") return "";
+
+  return digits;
+}
 
 export default function CustomerManagement() {
   const { customers, loading, error, refresh } = useOwnerCustomers();
@@ -61,6 +94,7 @@ export default function CustomerManagement() {
     register,
     reset,
     control,
+    setError,
     handleSubmit,
     formState: { errors },
   } = useForm({
@@ -103,7 +137,7 @@ export default function CustomerManagement() {
     reset({
       customerCode: customer.customerCode,
       name: customer.name,
-      phoneNumber: customer.phoneNumber,
+      phoneNumber: formatPhoneNumber(customer.phoneNumber),
       address: customer.address,
       status: customer.status || "active",
     });
@@ -111,13 +145,26 @@ export default function CustomerManagement() {
   }
 
   async function submitCustomer(values) {
+    // Phone number: format first, then validate (Philippine mobile only)
+    const phoneNumber = formatPhoneNumber(values.phoneNumber);
+
+    if (!phoneNumberPattern.test(phoneNumber)) {
+      setError("phoneNumber", {
+        type: "manual",
+        message: "Enter a valid 10-digit mobile number starting with 9.",
+      });
+      return;
+    }
+
+    const customerValues = { ...values, phoneNumber };
+
     setSaving(true);
     try {
       if (editingCustomer) {
-        await ownerApi.updateCustomer(editingCustomer.id, values);
+        await ownerApi.updateCustomer(editingCustomer.id, customerValues);
         toast.success("Customer updated");
       } else {
-        await ownerApi.createCustomer(values);
+        await ownerApi.createCustomer(customerValues);
         toast.success("Customer added");
       }
       setDialogOpen(false);
@@ -190,12 +237,12 @@ export default function CustomerManagement() {
       header: "Status",
       cell: (row) => (
         <Badge
-          className={
-            row.status === "active"
-              ? "bg-green-500 text-white hover:bg-green-500/90"
-              : "bg-muted text-muted-foreground hover:bg-muted"
-          }
-          variant={row.status === "active" ? "default" : "secondary"}
+        className={
+          row.status === "active"
+          ? "bg-green-400/70"
+          : "bg-muted text-muted-foreground"
+        }
+        variant={row.status === "active" ? "default" : "secondary"}
         >
           {row.status}
         </Badge>
@@ -328,19 +375,52 @@ export default function CustomerManagement() {
                 </p>
               )}
             </div>
+
+            {/* Phone Number */}
             <div className="grid gap-2">
               <Label htmlFor="customer-phone">Phone Number</Label>
-              <Input
-                id="customer-phone"
-                type="tel"
-                {...register("phoneNumber")}
+
+              <Controller
+                name="phoneNumber"
+                control={control}
+                render={({ field }) => (
+                  <div className="relative">
+                    <span className="pointer-events-none absolute inset-y-0 left-0 flex items-center border-r px-3 text-sm font-medium text-muted-foreground">
+                      +63
+                    </span>
+
+                    <Input
+                      id="customer-phone"
+                      type="tel"
+                      inputMode="numeric"
+                      autoComplete="tel-national"
+                      placeholder="9123456789"
+                      className="pl-14"
+                      ref={field.ref}
+                      value={getLocalDigits(field.value ?? "")}
+                      onChange={(event) => {
+                        const digits = getLocalDigits(event.target.value);
+
+                        // Stored as "+63 9XXXXXXXXX", or "" when empty
+                        field.onChange(digits ? `+63 ${digits}` : "");
+                      }}
+                      onBlur={field.onBlur}
+                    />
+                  </div>
+                )}
               />
+
+              <p className="text-xs text-muted-foreground">
+                Enter the 10-digit mobile number starting with 9.
+              </p>
+
               {errors.phoneNumber && (
                 <p className="text-sm text-destructive">
                   {errors.phoneNumber.message}
                 </p>
               )}
             </div>
+
             <div className="grid gap-2">
               <Label htmlFor="customer-address">Address</Label>
               <Input id="customer-address" {...register("address")} />
@@ -351,6 +431,7 @@ export default function CustomerManagement() {
               )}
             </div>
 
+            {/* Status */}
             <div className="grid gap-2">
               <Label htmlFor="customer-status">Status</Label>
 
