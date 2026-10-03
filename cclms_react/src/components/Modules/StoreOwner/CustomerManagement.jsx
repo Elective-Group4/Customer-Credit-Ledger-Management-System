@@ -37,6 +37,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { cn } from "@/lib/utils";
 
 import { Controller, useForm } from "react-hook-form";
 
@@ -223,12 +224,12 @@ export default function CustomerManagement() {
       header: "Status",
       cell: (row) => (
         <Badge
-          className={
-            row.status === "active"
-              ? "bg-green-400/70"
-              : "bg-muted text-muted-foreground"
-          }
-          variant={row.status === "active" ? "default" : "secondary"}
+        className={
+          row.status === "active"
+          ? "bg-green-400/70"
+          : "bg-muted text-muted-foreground"
+        }
+        variant={row.status === "active" ? "default" : "secondary"}
         >
           {row.status}
         </Badge>
@@ -256,7 +257,7 @@ export default function CustomerManagement() {
             <Pencil />
           </Button>
           <Button
-            className="bg-red-400 text-white hover:bg-red-600"
+            className="text-red-500 hover:text-red-600"
             variant="ghost"
             size="icon"
             title={`Delete ${row.name}`}

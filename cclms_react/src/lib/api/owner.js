@@ -4,7 +4,12 @@ import { supabase } from "@/lib/supabase";
 // GET CURRENT OWNER STORE ID
 // =========================================================
 
-async function getCurrentStoreId() {
+async function getCurrentStoreId(operation = "owner store lookup") {
+  const {
+    data: { session },
+    error: sessionError,
+  } = await supabase.auth.getSession();
+
   const {
     data: { user },
     error: userError,
@@ -18,9 +23,22 @@ async function getCurrentStoreId() {
     throw new Error("You are not logged in.");
   }
 
+  if (import.meta.env.DEV && operation === "customer insert") {
+    console.debug("CUSTOMER INSERT AUTH:", {
+      sessionAvailable: Boolean(session?.user),
+      sessionError: sessionError
+        ? {
+            message: sessionError.message,
+            code: sessionError.code,
+          }
+        : null,
+      authenticatedUserId: user.id,
+    });
+  }
+
   const { data, error } = await supabase
     .from("store_owners")
-    .select("id")
+    .select("id, profile_id")
     .eq("profile_id", user.id)
     .single();
 
@@ -28,7 +46,30 @@ async function getCurrentStoreId() {
     throw error;
   }
 
-  console.log("OWNER STORE:", data?.id);
+  if (import.meta.env.DEV && operation === "customer insert") {
+    console.debug("CUSTOMER INSERT OWNER:", {
+      ownerProfileId: data?.profile_id,
+      retrievedOwnerStoreId: data?.id,
+    });
+
+    const { data: functionStoreId, error: functionError } = await supabase.rpc(
+      "current_owner_store_id",
+    );
+
+    console.debug("CUSTOMER INSERT RLS STORE CHECK:", {
+      retrievedOwnerStoreId: data?.id,
+      currentOwnerStoreId: functionStoreId,
+      matches: !functionError && functionStoreId === data?.id,
+      functionError: functionError
+        ? {
+            message: functionError.message,
+            code: functionError.code,
+            details: functionError.details,
+            hint: functionError.hint,
+          }
+        : null,
+    });
+  }
 
   return data.id;
 }
@@ -268,7 +309,14 @@ export const ownerApi = {
   // -------------------------------------------------------
 
   async createCustomer(input) {
-    const storeId = await getCurrentStoreId();
+    const storeId = await getCurrentStoreId("customer insert");
+
+    if (import.meta.env.DEV) {
+      console.debug("CUSTOMER INSERT PAYLOAD:", {
+        submittedCustomerStoreId: storeId,
+        name: input.name,
+      });
+    }
 
     const { data, error } = await supabase
       .from("customers")
@@ -283,11 +331,21 @@ export const ownerApi = {
       .single();
 
     if (error) {
-      console.error("CUSTOMER INSERT ERROR:", error);
+      if (import.meta.env.DEV) {
+        console.error("CUSTOMER INSERT ERROR:", {
+          message: error.message,
+          code: error.code,
+          details: error.details,
+          hint: error.hint,
+          submittedCustomerStoreId: storeId,
+        });
+      }
       throw error;
     }
 
-    console.log("CUSTOMER CREATED:", data);
+    if (import.meta.env.DEV) {
+      console.debug("CUSTOMER CREATED:", data);
+    }
 
     const { data: customer, error: customerError } = await supabase
       .from("owner_customer_balances")

@@ -11,6 +11,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 // Modules
 import LoginPage from "./components/Modules/Login/LoginPage";
 import LandingPage from "./components/Modules/LandingPage/LandingPage";
+import StoreLoader from "./components/Modules/LandingPage/StoreLoader";
 import AdminDashboard from "./components/Modules/Admin/AdminDashboard";
 import OwnerManagement from "./components/Modules/Admin/OwnerManagement";
 import AdminLayout from "./components/Modules/Admin/AdminLayout";
@@ -33,6 +34,18 @@ const queryClient = new QueryClient();
 const OwnerProfile = lazy(
   () => import("./components/Modules/StoreOwner/OwnerProfile"),
 );
+
+function LandingPageEntry() {
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => setLoading(false), 2800);
+
+    return () => window.clearTimeout(timer);
+  }, []);
+
+  return loading ? <StoreLoader /> : <LandingPage />;
+}
 
 function AdminRoute({ children }) {
   const [status, setStatus] = useState("checking");
@@ -58,10 +71,6 @@ function AdminRoute({ children }) {
         .eq("id", session.user.id)
         .single();
 
-      console.log("Current session:", session.user.email);
-      console.log("Profile:", profile);
-      console.log("Profile error:", error);
-
       if (!mounted) return;
 
       if (error) {
@@ -73,8 +82,6 @@ function AdminRoute({ children }) {
       if (profile?.role === "admin" && profile?.status === "active") {
         setStatus("allowed");
       } else {
-        console.log("User role is:", profile?.role);
-        console.log("Admin profile status is:", profile?.status);
         if (profile?.role === "admin") {
           await supabase.auth.signOut();
         }
@@ -123,11 +130,6 @@ function OwnerRoute({ children }) {
         .select("role, status")
         .eq("id", session.user.id)
         .single();
-
-      console.log("AUTH USER:", session.user.id);
-      console.log("PROFILE ROLE:", profile?.role);
-      console.log("PROFILE STATUS:", profile?.status);
-      console.log("OWNER ROUTE PROFILE ERROR:", error);
 
       if (!mounted) return;
 
@@ -178,7 +180,7 @@ export default function App() {
               DEFAULT
           ================================= */}
 
-              <Route path="/" element={<LandingPage />} />
+              <Route path="/" element={<LandingPageEntry />} />
 
               {/* ================================
               LOGIN

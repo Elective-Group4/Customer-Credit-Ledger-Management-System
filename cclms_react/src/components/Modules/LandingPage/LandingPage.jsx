@@ -12,6 +12,7 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import logo from "@/assets/images/logo_sarisari.png";
+import StoreLoader from "./StoreLoader";
 
 const LOGIN_PATH = "/login"; // change to your actual login route
 
@@ -83,11 +84,7 @@ export default function LandingPage() {
   const { content, loading, error } = useLandingContent();
 
   if (loading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center">
-        Loading...
-      </div>
-    );
+    return <StoreLoader />;
   }
 
   if (error) {
