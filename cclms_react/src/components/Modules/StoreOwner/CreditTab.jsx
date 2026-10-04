@@ -627,7 +627,14 @@ export default function CreditTab() {
       key: "status",
       header: "Status",
       cell: (row) => (
-        <Badge variant={row.status === "active" ? "default" : "secondary"}>
+        <Badge
+          variant={row.status === "active" ? "default" : "secondary"}
+          className={
+            row.status === "active"
+              ? "bg-green-500 text-white hover:bg-green-500/90"
+              : "bg-muted text-muted-foreground hover:bg-muted"
+          }
+        >
           {row.status}
         </Badge>
       ),

@@ -187,35 +187,49 @@ export default function CustomerManagement() {
   }
 
   async function deleteCustomer() {
-    if (!customerToDelete) return;
-
-    if (Number(customerToDelete.balance) !== 0) {
-      toast.error(
-        "Cannot delete customer. Please settle the outstanding balance first.",
-      );
-      return;
-    }
+    if (!customerToDelete || saving) return;
 
     setSaving(true);
+
     try {
       await ownerApi.deleteCustomer(customerToDelete.id);
+
       toast.success("Customer deleted successfully.");
+
       setDeleteOpen(false);
       setCustomerToDelete(null);
+
       await refresh();
     } catch (deleteError) {
       const message =
         deleteError instanceof Error
           ? deleteError.message
-          : "Please try again.";
-      toast.error(
-        message.includes("settle the outstanding balance")
-          ? "Cannot delete customer. Please settle the outstanding balance first."
-          : "Unable to delete customer",
-        message.includes("settle the outstanding balance")
-          ? undefined
-          : { description: message },
-      );
+          : "An unexpected error occurred.";
+
+      const normalizedMessage = message.toLowerCase();
+
+      if (
+        normalizedMessage.includes("outstanding balance") ||
+        normalizedMessage.includes("cannot delete customer")
+      ) {
+        toast.error("Unable to delete customer.", {
+          description: message,
+        });
+      } else if (
+        normalizedMessage.includes("not authorized") ||
+        normalizedMessage.includes("access denied")
+      ) {
+        toast.error("You are not authorized to delete this customer.");
+      } else if (normalizedMessage.includes("financial transaction history")) {
+        toast.error("Customer has transaction history.", {
+          description:
+            "This customer cannot be permanently deleted. You can change their status to inactive instead.",
+        });
+      } else {
+        toast.error("Unable to delete customer.", {
+          description: message,
+        });
+      }
     } finally {
       setSaving(false);
     }
@@ -237,12 +251,12 @@ export default function CustomerManagement() {
       header: "Status",
       cell: (row) => (
         <Badge
-        className={
-          row.status === "active"
-          ? "bg-green-400/70"
-          : "bg-muted text-muted-foreground"
-        }
-        variant={row.status === "active" ? "default" : "secondary"}
+          className={
+            row.status === "active"
+              ? "bg-green-400/70"
+              : "bg-muted text-muted-foreground"
+          }
+          variant={row.status === "active" ? "default" : "secondary"}
         >
           {row.status}
         </Badge>
