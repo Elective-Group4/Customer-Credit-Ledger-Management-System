@@ -1,5 +1,11 @@
 import { useState } from "react";
-import { Activity, CircleDollarSign, UserCheck, Users } from "lucide-react";
+import {
+  Activity,
+  CircleDollarSign,
+  UserCheck,
+  Users,
+  ShoppingBasket,
+} from "lucide-react";
 import {
   Bar,
   BarChart,
@@ -154,13 +160,13 @@ export default function OwnerDashboard() {
           iconColor="#059669"
         />
         <StatCard
-          title="Due This Month"
-          value={loading ? "..." : (totals?.customersDueThisMonth ?? 0)}
-          description="Customers with a monthly due date"
-          icon={Activity}
-          accent="#78716C"
-          iconBackground="#F5F5F4"
-          iconColor="#78716C"
+          title="Active Products"
+          value={loading ? "..." : (totals?.listProducts ?? 0)}
+          description="Total products in the store"
+          icon={ShoppingBasket}
+          accent="#EF4444"
+          iconBackground="#FEE2E2"
+          iconColor="#DC2626"
         />
       </div>
 

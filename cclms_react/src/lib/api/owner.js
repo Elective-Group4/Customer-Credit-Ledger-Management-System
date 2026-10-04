@@ -183,6 +183,21 @@ export const ownerApi = {
     return (data ?? []).map(mapProduct);
   },
 
+  async countActiveProducts() {
+    const storeId = await getCurrentStoreId();
+    const { count, error } = await supabase
+      .from("products")
+      .select("id", { count: "exact", head: true })
+      .eq("store_id", storeId)
+      .eq("status", "active");
+
+    if (error) {
+      throw error;
+    }
+
+    return count ?? 0;
+  },
+
   async createProduct(input) {
     const storeId = await getCurrentStoreId();
 
@@ -507,13 +522,15 @@ export const ownerApi = {
   // =======================================================
 
   async getDashboard() {
-    const [totalsResult, rankingResult, monthlyResult] = await Promise.all([
-      supabase.rpc("owner_dashboard_totals"),
+    const [totalsResult, rankingResult, monthlyResult, activeProductsCount] =
+      await Promise.all([
+        supabase.rpc("owner_dashboard_totals"),
 
-      supabase.rpc("owner_credit_ranking"),
+        supabase.rpc("owner_credit_ranking"),
 
-      supabase.rpc("owner_monthly_credit_summary"),
-    ]);
+        supabase.rpc("owner_monthly_credit_summary"),
+        ownerApi.countActiveProducts(),
+      ]);
 
     if (totalsResult.error) {
       throw totalsResult.error;
@@ -554,6 +571,7 @@ export const ownerApi = {
         customersDueThisMonth: Number(
           totals.customers_due_this_month ?? totals.customersDueThisMonth ?? 0,
         ),
+        listProducts: activeProductsCount,
       },
       ranking,
       monthlyCredit,

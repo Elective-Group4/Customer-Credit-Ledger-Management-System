@@ -357,6 +357,7 @@ function CustomerDetails({ customer, entries, payments, saving, onPay }) {
       {customer.balance > 0 && (
         <div className="grid gap-3 border-t pt-4 sm:grid-cols-[auto_1fr_auto] sm:items-end">
           <Button
+            className="bg-[#D4A017] text-white hover:bg-[#6B4226]/90"
             type="button"
             onClick={() => handlePay(customer.balance, "full")}
             disabled={saving}
@@ -387,6 +388,7 @@ function CustomerDetails({ customer, entries, payments, saving, onPay }) {
             variant="outline"
             onClick={() => handlePay(partialAmount, "partial")}
             disabled={saving}
+            className="bg-[#D4A017] text-white hover:bg-[#6B4226]/90 hover:text-white"
           >
             Record Payment
           </Button>
@@ -684,13 +686,6 @@ export default function CreditTab() {
             Track customer credit and record payments.
           </p>
         </div>
-        <Button
-          className="h-11 px-5 bg-[#D4A017] hover:bg-[#D4A017]/90 text-white"
-          onClick={() => setAddOpen(true)}
-          disabled={!activeCustomers.length || !products.length}
-        >
-          <Plus /> Add Credit
-        </Button>
       </div>
 
       <SummaryStrip customers={customers} loading={loading} />
