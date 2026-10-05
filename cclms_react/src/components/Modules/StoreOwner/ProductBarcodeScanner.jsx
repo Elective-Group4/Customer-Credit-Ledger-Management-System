@@ -16,6 +16,7 @@ import {
  * Limiting the list makes scanning faster and more accurate.
  */
 const hints = new Map();
+const REQUIRED_MATCHES = 3;
 
 hints.set(DecodeHintType.POSSIBLE_FORMATS, [
   BarcodeFormat.EAN_13,
@@ -65,6 +66,8 @@ function ScannerView({ onDetected }) {
     let handled = false;
     let stream = null;
     let timer = null;
+    let candidateText = "";
+    let candidateCount = 0;
 
     const video = videoRef.current;
 
@@ -90,11 +93,21 @@ function ScannerView({ onDetected }) {
 
         try {
           const result = reader.decodeFromCanvas(canvas);
+          const decodedText = result.getText().trim();
 
-          handled = true;
-          navigator.vibrate?.(100);
-          onDetectedRef.current(result.getText());
-          return;
+          if (decodedText === candidateText) {
+            candidateCount += 1;
+          } else {
+            candidateText = decodedText;
+            candidateCount = 1;
+          }
+
+          if (decodedText && candidateCount >= REQUIRED_MATCHES) {
+            handled = true;
+            navigator.vibrate?.(100);
+            onDetectedRef.current(decodedText);
+            return;
+          }
         } catch {
           // No barcode in this frame, try again below
         }
@@ -177,7 +190,7 @@ function ScannerView({ onDetected }) {
 
       {status === "scanning" && (
         <p className="text-center text-xs text-muted-foreground">
-          Hold the barcode inside the frame. It will be detected automatically.
+          Hold the barcode steady inside the frame until it is confirmed.
         </p>
       )}
     </div>
