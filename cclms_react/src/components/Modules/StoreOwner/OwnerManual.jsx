@@ -69,7 +69,7 @@ const guideSteps = [
 
 function Steps({ items }) {
   return (
-    <ol className="mt-3 space-y-2 pl-5 text-sm text-muted-foreground">
+    <ol className="mt-3 min-w-0 space-y-2 break-words pl-5 text-sm text-muted-foreground">
       {items.map((item, index) => (
         <li key={item} className="pl-1 leading-6">
           <span className="font-medium text-foreground">{index + 1}.</span>{" "}
@@ -82,11 +82,11 @@ function Steps({ items }) {
 
 function TopicHeading({ icon: Icon, title, children }) {
   return (
-    <div className="flex items-start gap-3">
+    <div className="flex min-w-0 items-start gap-3">
       <div className="mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-lg bg-[#6B4226]/10 text-[#6B4226] dark:bg-[#D4A017]/15 dark:text-[#D4A017]">
         <Icon className="size-4" />
       </div>
-      <div>
+      <div className="min-w-0 flex-1">
         <h3 className="font-semibold text-foreground">{title}</h3>
         {children}
       </div>
@@ -97,18 +97,18 @@ function TopicHeading({ icon: Icon, title, children }) {
 function ManualSection({ value, icon, title, children }) {
   return (
     <AccordionItem value={value} className="border-b last:border-b-0">
-      <AccordionTrigger className="px-1 text-left text-base hover:no-underline sm:text-lg">
-        <span className="flex items-center gap-3">
+      <AccordionTrigger className="w-full min-w-0 px-1 text-left text-base hover:no-underline sm:text-lg">
+        <span className="flex min-w-0 flex-1 items-center gap-3 pr-2">
           <span className="flex size-8 items-center justify-center rounded-md bg-muted text-[#6B4226] dark:text-[#D4A017]">
             {(() => {
               const Icon = icon;
               return <Icon className="size-4" />;
             })()}
           </span>
-          {title}
+          <span className="min-w-0 break-words">{title}</span>
         </span>
       </AccordionTrigger>
-      <AccordionContent className="space-y-6 px-1 pb-6 text-sm leading-6 text-muted-foreground">
+      <AccordionContent className="w-full min-w-0 space-y-6 px-1 pb-6 text-sm leading-6 text-muted-foreground">
         {children}
       </AccordionContent>
     </AccordionItem>
@@ -136,7 +136,7 @@ function SummaryCard({ label, value, icon: Icon, tone = "brown" }) {
 
 export default function OwnerManual() {
   return (
-    <main className="flex flex-1 flex-col gap-7 bg-[#FAFAF9] p-5 md:p-7 dark:bg-background">
+    <main className="flex min-w-0 flex-1 flex-col gap-7 bg-[#FAFAF9] p-4 sm:p-5 md:p-7 dark:bg-background">
       <div className="flex flex-col gap-2">
         <h1 className="text-3xl font-bold tracking-tight text-[#171717] dark:text-foreground md:text-4xl">
           User Manual
@@ -177,14 +177,14 @@ export default function OwnerManual() {
         </CardContent>
       </Card>
 
-      <Card className="bg-white shadow-sm dark:bg-card">
+      <Card className="min-w-0 bg-white shadow-sm dark:bg-card">
         <CardHeader>
           <CardTitle>Store Owner Guide</CardTitle>
           <CardDescription>
             Open a topic to see the steps for that part of your store.
           </CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="min-w-0">
           <Accordion type="single" collapsible className="w-full">
             <ManualSection
               value="dashboard"
@@ -444,7 +444,7 @@ export default function OwnerManual() {
                   "Check the current outstanding balance.",
                 ]}
               />
-              <div className="grid gap-3 sm:grid-cols-3">
+              <div className="grid min-w-0 gap-3 sm:grid-cols-3">
                 <SummaryCard
                   label="Total Credit"
                   value="All credit recorded"
@@ -584,19 +584,22 @@ export default function OwnerManual() {
         </div>
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {guideSteps.map(({ title, path, icon: Icon }, index) => (
-            <Card key={title} className="bg-white shadow-sm dark:bg-card">
+            <Card
+              key={title}
+              className="min-w-0 bg-white shadow-sm dark:bg-card"
+            >
               <CardContent className="flex gap-3 p-4">
                 <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-[#6B4226] text-xs font-semibold text-white">
                   {index + 1}
                 </span>
-                <div className="min-w-0">
+                <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2">
                     <Icon className="size-4 text-[#D4A017]" />
                     <p className="font-semibold">
                       How do I {title.toLowerCase()}?
                     </p>
                   </div>
-                  <p className="mt-1 text-sm leading-5 text-muted-foreground">
+                  <p className="mt-1 break-words text-sm leading-5 text-muted-foreground">
                     {path}
                   </p>
                 </div>
