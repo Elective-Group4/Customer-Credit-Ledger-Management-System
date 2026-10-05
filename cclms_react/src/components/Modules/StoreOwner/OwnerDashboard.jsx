@@ -105,6 +105,16 @@ export default function OwnerDashboard() {
         },
       ]
     : [];
+  const monthlyCredit = data?.monthlyCredit ?? [];
+  const maxMonthlyValue = Math.max(
+    0,
+    ...monthlyCredit.flatMap((row) => [row.credit, row.payments]),
+  );
+  const monthlyTickStep = Math.max(10, Math.ceil(maxMonthlyValue / 50) * 10);
+  const monthlyTicks = Array.from(
+    { length: 6 },
+    (_, index) => index * monthlyTickStep,
+  );
 
   return (
     <main className="flex flex-1 flex-col gap-7 bg-background p-5 md:p-7">
@@ -278,7 +288,7 @@ export default function OwnerDashboard() {
                 <BarChart
                   accessibilityLayer
                   data={data.monthlyCredit}
-                  margin={{ top: 10, right: 10, left: -15, bottom: 0 }}
+                  margin={{ top: 10, right: 10, left: 0, bottom: 0 }}
                 >
                   <CartesianGrid
                     vertical={false}
@@ -295,7 +305,16 @@ export default function OwnerDashboard() {
                   <YAxis
                     tickLine={false}
                     axisLine={false}
-                    width={30}
+                    allowDecimals={false}
+                    domain={[0, monthlyTicks[monthlyTicks.length - 1]]}
+                    ticks={monthlyTicks}
+                    tickFormatter={(value) =>
+                      Number(value).toLocaleString("en-PH", {
+                        notation: "compact",
+                        maximumFractionDigits: 1,
+                      })
+                    }
+                    width={56}
                     className="text-xs"
                   />
                   <ChartTooltip

@@ -19,14 +19,14 @@ import {
 
 const navItems = [
   { title: "Dashboard", url: "/owner", icon: ChartPie },
-  { title: "Credit Ledger", url: "/owner/credits", icon: CreditCard },
+  { title: "Customers", url: "/owner/customers", icon: Users },
   { title: "Products Management", url: "/owner/products", icon: Package },
+  { title: "Credit Ledger", url: "/owner/credits", icon: CreditCard },
   {
     title: "Transactions History",
     url: "/owner/transactions",
     icon: ReceiptText,
   },
-  { title: "Customers", url: "/owner/customers", icon: Users },
 ];
 
 const teams = [{ name: "SARI-SARI", logo: Store, plan: "Store Owner" }];

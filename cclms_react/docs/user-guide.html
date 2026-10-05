@@ -1,0 +1,208 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Sari-Sari CCLMS User Guide</title>
+    <style>
+      @page { size: Letter; margin: 0.62in; }
+      * { box-sizing: border-box; }
+      body { margin: 0; color: #24211d; font: 10.5pt/1.48 "Segoe UI", Arial, sans-serif; }
+      h1, h2, h3 { color: #302218; line-height: 1.18; }
+      h1 { margin: 0 0 12pt; font-size: 28pt; }
+      h2 { margin: 0 0 12pt; font-size: 20pt; }
+      h3 { margin: 15pt 0 5pt; font-size: 12pt; }
+      p { margin: 5pt 0 9pt; }
+      ul, ol { margin: 5pt 0 10pt; padding-left: 19pt; }
+      li { margin: 3pt 0; }
+      .cover { min-height: 9.1in; display: flex; flex-direction: column; justify-content: center; border-top: 12px solid #d4a017; padding: 28pt 12pt; }
+      .brand { color: #8b4e2f; font-size: 12pt; font-weight: 700; letter-spacing: 2px; }
+      .cover h1 { max-width: 500pt; margin-top: 18pt; font-size: 36pt; }
+      .subtitle { max-width: 410pt; color: #675b4d; font-size: 15pt; }
+      .cover-meta { margin-top: 32pt; padding-top: 12pt; border-top: 1px solid #ded8cf; color: #675b4d; }
+      .page { page-break-before: always; }
+      .eyebrow { margin-bottom: 5pt; color: #a27308; font-size: 8.5pt; font-weight: 700; letter-spacing: 1.2px; text-transform: uppercase; }
+      .callout { margin: 12pt 0; padding: 10pt 12pt; border-left: 4px solid #d4a017; background: #fbf6e9; }
+      .note { color: #5f574d; font-size: 9pt; }
+      .route { color: #8b4e2f; font-family: Consolas, monospace; font-size: 9pt; }
+      figure { margin: 12pt 0; page-break-inside: avoid; }
+      figure img { display: block; width: 100%; max-height: 8.5in; object-fit: contain; object-position: top center; border: 1px solid #ded8cf; }
+      figcaption { margin-top: 5pt; color: #675b4d; font-size: 8.5pt; }
+      .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12pt; }
+      .panel { padding: 10pt; border: 1px solid #ded8cf; border-radius: 5px; }
+      table { width: 100%; border-collapse: collapse; font-size: 9.4pt; }
+      th, td { padding: 7pt; border-bottom: 1px solid #ded8cf; text-align: left; vertical-align: top; }
+      th { color: #302218; background: #f6f1e8; }
+      .shot-limit { padding: 10pt; border: 1px dashed #a99e8f; border-radius: 5px; color: #5f574d; font-size: 9pt; }
+      .small { font-size: 9pt; }
+      .endmark { margin-top: 20pt; padding-top: 8pt; border-top: 1px solid #ded8cf; color: #786e62; font-size: 8pt; }
+      a { color: #8b4e2f; }
+    </style>
+  </head>
+  <body>
+    <section class="cover">
+      <div class="brand">SARI-SARI</div>
+      <h1>Customer Credit Ledger Management System</h1>
+      <p class="subtitle">User Guide</p>
+      <p>Instructions for store owners and system administrators using the digital customer credit ledger.</p>
+      <div class="cover-meta">Version 1.0 · October 5, 2026<br />Web application · Desktop and mobile browser</div>
+    </section>
+
+    <section class="page">
+      <div class="eyebrow">Start here</div>
+      <h2>Using this guide</h2>
+      <p>CCLMS keeps customer balances, product credit, payments, and account activity in one store-scoped system. The features available after login depend on your account role.</p>
+      <table>
+        <thead><tr><th>Role</th><th>Available areas</th></tr></thead>
+        <tbody>
+          <tr><td>Public visitor</td><td>Landing page, login, password recovery</td></tr>
+          <tr><td>Store owner</td><td>Dashboard, customers, products, credit ledger, transaction history, profile</td></tr>
+          <tr><td>Administrator</td><td>Admin dashboard, owner management, login audit, landing-page management</td></tr>
+        </tbody>
+      </table>
+      <div class="callout"><strong>Account access:</strong> Owner accounts are created by an administrator. If an account is inactive or you cannot access a role area, contact your system administrator.</div>
+      <h3>Screen capture note</h3>
+      <p class="note">Screenshots in this edition were captured from the local app without signing in. Owner and administrator routes require an authenticated account, and the reset-password screen requires a valid recovery link. Those private/token-gated interfaces are described below but are not represented with fabricated screenshots. The landing-page ledger card contains sample display data.</p>
+      <h3>Contents</h3>
+      <ol>
+        <li>Public landing page and sign-in</li>
+        <li>Password recovery</li>
+        <li>Store-owner workspace</li>
+        <li>Administrator workspace</li>
+        <li>Privacy and troubleshooting</li>
+      </ol>
+    </section>
+
+    <section class="page">
+      <div class="eyebrow">Public interface · /</div>
+      <h2>Landing page</h2>
+      <p>The landing page introduces CCLMS and provides the route into the system. Select <strong>Log In</strong> in the navigation or main call to action to open the sign-in screen. The sample ledger shown here is illustrative and is not a live store account.</p>
+      <figure><img src="user-guide-screenshots/landing.png" alt="CCLMS public landing page showing sample ledger and features" /><figcaption>Figure 1. Public landing page with sample ledger, key features, and navigation.</figcaption></figure>
+      <div class="callout"><strong>Owner access:</strong> If you do not have an account, ask the administrator to create an owner account for your store.</div>
+    </section>
+
+    <section class="page">
+      <div class="eyebrow">Authentication · /login</div>
+      <h2>Sign in</h2>
+      <figure><img src="user-guide-screenshots/login.png" alt="CCLMS sign-in page" /><figcaption>Figure 2. Sign-in page. The right panel contains Sari-Sari branding.</figcaption></figure>
+      <ol>
+        <li>Enter the email address associated with your CCLMS account.</li>
+        <li>Enter your password. Use the eye control to show or hide it.</li>
+        <li>Select <strong>Remember me</strong> only on a device you control.</li>
+        <li>Select <strong>Login</strong>. The system opens the workspace assigned to your account role.</li>
+      </ol>
+      <p class="small">Use <strong>Back to landing page</strong> to return to the public page. If sign-in fails, verify the email/password and ask the administrator to check your account status.</p>
+    </section>
+
+    <section class="page">
+      <div class="eyebrow">Authentication · /forgot-password</div>
+      <h2>Reset a forgotten password</h2>
+      <figure><img src="user-guide-screenshots/forgot-password.png" alt="Forgot password page" /><figcaption>Figure 3. Password recovery request screen.</figcaption></figure>
+      <ol>
+        <li>From sign-in, select <strong>Forgot your password?</strong></li>
+        <li>Enter the email linked to your account and select <strong>Send reset link</strong>.</li>
+        <li>Check your inbox and spam folder for the recovery email.</li>
+        <li>Open the link promptly. It returns to CCLMS at the reset-password screen.</li>
+        <li>Enter and confirm the new password, then submit the update.</li>
+      </ol>
+      <div class="callout"><strong>Link not received?</strong> Confirm the address and contact the administrator if mail delivery is still unavailable. Recovery links can expire; request another if needed.</div>
+      <div class="shot-limit">The reset-password form only appears after a valid recovery link establishes a Supabase recovery session, so it could not be captured in this unauthenticated guide build.</div>
+    </section>
+
+    <section class="page">
+      <div class="eyebrow">Store owner · /owner</div>
+      <h2>Owner workspace</h2>
+      <div class="shot-limit">Owner screenshots require signing in with an active owner account. The routes below are protected and redirect unauthenticated visitors to Login.</div>
+      <h3>Dashboard · <span class="route">/owner</span></h3>
+      <p>Review total customers, overall outstanding balance, active customers, active products, customer-status distribution, credit by month, and the ranking of customers with outstanding balances. Use this as the overview before taking ledger actions.</p>
+      <h3>Customers · <span class="route">/owner/customers</span></h3>
+      <ul>
+        <li>Select <strong>Add New Customer</strong>, enter the customer's name, mobile number, address, and status, then save. The database assigns the customer ID.</li>
+        <li>Use the row actions to view or edit customer details and active/inactive status.</li>
+        <li>Delete is available only when the customer's calculated balance is exactly zero. Active/inactive status does not determine eligibility.</li>
+        <li>Deletion is a soft delete: credit/payment records are retained, and a deletion event is recorded in Transaction History.</li>
+      </ul>
+      <h3>Products · <span class="route">/owner/products</span></h3>
+      <ul>
+        <li>Select <strong>Add New Product</strong>; enter its name, product ID/barcode, and price. An image is optional.</li>
+        <li>Select <strong>Scan</strong> to use the device camera, then hold the barcode steady until the same value is confirmed.</li>
+        <li>Use the row actions to edit, activate/deactivate, or delete a product. Keep products active if they should be selectable for new credit.</li>
+      </ul>
+      <p class="small">Camera scanning requires browser camera permission and HTTPS, except on localhost. If scanning is unavailable, enter the printed product code manually.</p>
+    </section>
+
+    <section class="page">
+      <div class="eyebrow">Store owner · /owner/credits</div>
+      <h2>Credit ledger and payments</h2>
+      <div class="shot-limit">This protected screen could not be captured without an owner login.</div>
+      <h3>Add credit</h3>
+      <ol>
+        <li>Open <strong>Credit Ledger</strong> and locate the customer card or table row.</li>
+        <li>Select <strong>Add Credit</strong> for that customer. Inactive customers cannot receive new credit.</li>
+        <li>Choose an active product from the list or use <strong>Scan</strong>. The customer must have at least one active product available.</li>
+        <li>Enter the quantity and review the subtotal.</li>
+        <li>Select <strong>Add Credit</strong> to save. The balance and ledger update after a successful save.</li>
+      </ol>
+      <h3>Record a payment</h3>
+      <ol>
+        <li>Open the customer details from their card or select <strong>View</strong> in table view.</li>
+        <li>Use <strong>Pay Full</strong> to pay the displayed balance, or enter a partial amount and select <strong>Record Payment</strong>.</li>
+        <li>Payments cannot exceed the current outstanding balance. Review the updated balance and payment history after saving.</li>
+      </ol>
+      <div class="callout">Use the search box to find a customer by name or ID. The card/table control changes how customers are displayed.</div>
+    </section>
+
+    <section class="page">
+      <div class="eyebrow">Store owner · /owner/transactions</div>
+      <h2>Transaction history</h2>
+      <div class="shot-limit">This protected screen could not be captured without an owner login.</div>
+      <ul>
+        <li>Search by transaction ID, event type, customer, or details.</li>
+        <li>Use the date filter to narrow results to a particular day.</li>
+        <li>Select <strong>Export Excel</strong> to download the currently filtered records.</li>
+        <li>Customer deletion events appear here with the saved customer name and ID. Deleting a customer does not remove earlier financial history.</li>
+      </ul>
+      <h3>Profile · <span class="route">/owner/profile</span></h3>
+      <p>Open the account menu at the bottom of the owner navigation and select <strong>Profile</strong>. Update your profile details, avatar, or password using the forms provided. The account menu also toggles light/dark mode and provides the sign-out action.</p>
+    </section>
+
+    <section class="page">
+      <div class="eyebrow">Administrator · /admin</div>
+      <h2>Administrator workspace</h2>
+      <div class="shot-limit">Admin screenshots require an active administrator account. The routes below are protected and redirect unauthenticated visitors to Login.</div>
+      <h3>Dashboard · <span class="route">/admin</span></h3>
+      <p>Review owner-account totals and active/inactive account summaries. Use the sidebar to navigate between admin tasks.</p>
+      <h3>Owner Management · <span class="route">/admin/owners</span></h3>
+      <p>Create and manage store-owner accounts. Verify the account details and status before saving. Deactivating an owner prevents access until the account is reactivated.</p>
+      <h3>Login Audit · <span class="route">/admin/logs</span></h3>
+      <p>Review administrator login activity and related audit details. Use the available filters and table controls to locate entries.</p>
+      <h3>Landing Page · <span class="route">/admin/landing</span></h3>
+      <p>Manage the public landing-page content shown to visitors. Save and then open the public page to confirm the published content.</p>
+      <div class="callout"><strong>Access control:</strong> Admin routes require a signed-in user whose profile role is <em>admin</em> and status is <em>active</em>. Owner routes require the corresponding active owner role.</div>
+    </section>
+
+    <section class="page">
+      <div class="eyebrow">Good practice</div>
+      <h2>Data safety and troubleshooting</h2>
+      <ul>
+        <li>Confirm the customer and product before saving a credit entry or payment.</li>
+        <li>Never share your password or recovery link. Sign out on shared devices.</li>
+        <li>Keep customer accounts inactive rather than deleting them if a balance remains unsettled.</li>
+        <li>If a save fails, read the displayed error and contact the administrator with the message. Do not share passwords, tokens, or SMTP credentials.</li>
+        <li>If the dashboard or ledger cannot load, check your connection and account status; the administrator may need to review database permissions.</li>
+      </ul>
+      <h3>Role and route reference</h3>
+      <table>
+        <thead><tr><th>Area</th><th>Route</th><th>Role</th></tr></thead>
+        <tbody>
+          <tr><td>Landing page</td><td>/</td><td>Public</td></tr>
+          <tr><td>Login / Forgot Password</td><td>/login · /forgot-password</td><td>Public</td></tr>
+          <tr><td>Reset Password</td><td>/reset-password</td><td>Valid recovery session</td></tr>
+          <tr><td>Dashboard / Credit / Products / Transactions / Customers / Profile</td><td>/owner/*</td><td>Active owner</td></tr>
+          <tr><td>Dashboard / Owners / Login Audit / Landing Page</td><td>/admin/*</td><td>Active admin</td></tr>
+        </tbody>
+      </table>
+      <p class="endmark">SARI-SARI · Customer Credit Ledger Management System · User Guide · October 2026</p>
+    </section>
+  </body>
+</html>
