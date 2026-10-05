@@ -28,7 +28,6 @@ const navItems = [
     url: "/owner/transactions",
     icon: ReceiptText,
   },
-  { title: "Owner Manual", url: "/owner/manual", icon: BookOpenText },
 ];
 
 const teams = [{ name: "SARI-SARI", logo: Store, plan: "Store Owner" }];
