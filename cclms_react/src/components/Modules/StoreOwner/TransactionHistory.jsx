@@ -47,6 +47,7 @@ export default function TransactionHistory() {
       const matchesSearch =
         !query ||
         transaction.id.toLowerCase().includes(query) ||
+        transaction.eventType.toLowerCase().includes(query) ||
         transaction.customerName.toLowerCase().includes(query) ||
         transaction.products.toLowerCase().includes(query);
       const matchesDate = !date || transaction.createdAt.slice(0, 10) === date;
@@ -69,8 +70,9 @@ export default function TransactionHistory() {
     try {
       const rows = filteredTransactions.map((transaction) => ({
         "ID Code": transaction.id,
+        Type: transaction.eventType,
         Customer: transaction.customerName,
-        Products: transaction.products,
+        Details: transaction.products,
         Time: formatTime(transaction.createdAt),
       }));
       const worksheet = XLSX.utils.json_to_sheet(rows);
@@ -92,8 +94,9 @@ export default function TransactionHistory() {
 
   const columns = [
     { key: "id", header: "ID Code" },
+    { key: "eventType", header: "Type" },
     { key: "customerName", header: "Customer" },
-    { key: "products", header: "Products" },
+    { key: "products", header: "Details" },
     {
       key: "createdAt",
       header: "Time",
@@ -109,7 +112,7 @@ export default function TransactionHistory() {
             Transaction History
           </h1>
           <p className="text-muted-foreground">
-            Review and export recorded credit transactions.
+            Review and export credit transactions and customer deletion events.
           </p>
         </div>
         <Button
@@ -125,7 +128,7 @@ export default function TransactionHistory() {
           <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             className="pl-9"
-            placeholder="Search ID, customer, or product..."
+            placeholder="Search ID, event, customer, or details..."
             value={search}
             onChange={(event) => updateSearch(event.target.value)}
           />

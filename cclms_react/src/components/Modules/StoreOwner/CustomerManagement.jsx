@@ -201,10 +201,7 @@ export default function CustomerManagement() {
 
       await refresh();
     } catch (deleteError) {
-      const message =
-        deleteError instanceof Error
-          ? deleteError.message
-          : "An unexpected error occurred.";
+      const message = deleteError?.message || "An unexpected error occurred.";
 
       const normalizedMessage = message.toLowerCase();
 
@@ -220,11 +217,6 @@ export default function CustomerManagement() {
         normalizedMessage.includes("access denied")
       ) {
         toast.error("You are not authorized to delete this customer.");
-      } else if (normalizedMessage.includes("financial transaction history")) {
-        toast.error("Customer has transaction history.", {
-          description:
-            "This customer cannot be permanently deleted. You can change their status to inactive instead.",
-        });
       } else {
         toast.error("Unable to delete customer.", {
           description: message,
@@ -292,6 +284,12 @@ export default function CustomerManagement() {
               setCustomerToDelete(row);
               setDeleteOpen(true);
             }}
+            disabled={Number(row.balance) !== 0}
+            title={
+              Number(row.balance) !== 0
+                ? "Settle this customer's balance before deleting."
+                : `Delete ${row.name}`
+            }
           >
             <Trash2 />
           </Button>
@@ -509,9 +507,10 @@ export default function CustomerManagement() {
           <AlertDialogHeader>
             <AlertDialogTitle>Delete customer?</AlertDialogTitle>
             <AlertDialogDescription>
-              This will remove {customerToDelete?.name || "this customer"}.
-              Existing credit history may prevent deletion when connected to
-              ledger records.
+              {customerToDelete?.name || "This customer"} can be deleted only
+              when their outstanding balance is zero. Active or inactive status
+              does not affect deletion. Their financial history will be kept,
+              and the deletion will appear in Transaction History.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

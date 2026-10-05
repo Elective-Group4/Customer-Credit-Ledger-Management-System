@@ -67,6 +67,38 @@ grant execute on function public.set_my_theme_preference(text) to authenticated;
 alter table public.customers
   add column if not exists deleted_at timestamptz;
 
+create table if not exists public.customer_deletion_events (
+  id uuid primary key default gen_random_uuid(),
+  store_id uuid not null references public.store_owners(id),
+  customer_code text not null,
+  customer_name text not null,
+  deleted_by uuid not null references auth.users(id),
+  created_at timestamptz not null default now()
+);
+
+create index if not exists customer_deletion_events_store_created_idx
+  on public.customer_deletion_events (store_id, created_at desc);
+
+alter table public.customer_deletion_events enable row level security;
+
+do $$
+begin
+  if not exists (
+    select 1 from pg_policies
+    where schemaname = 'public'
+      and tablename = 'customer_deletion_events'
+      and policyname = 'customer_deletion_events_owner_select'
+  ) then
+    create policy customer_deletion_events_owner_select
+      on public.customer_deletion_events
+      for select to authenticated
+      using (store_id = public.current_owner_store_id());
+  end if;
+end
+$$;
+
+grant select on table public.customer_deletion_events to authenticated;
+
 create or replace view public.owner_customer_balances
 with (security_invoker = true)
 as
@@ -78,10 +110,10 @@ select
   c.phone_number,
   c.address,
   c.status,
-  c.created_at,
-  c.updated_at,
   coalesce(credits.total_credit, 0)::numeric(12,2) -
-    coalesce(payments.total_paid, 0)::numeric(12,2) as balance
+    coalesce(payments.total_paid, 0)::numeric(12,2) as balance,
+  c.created_at,
+  c.updated_at
 from public.customers c
 left join (
   select customer_id, sum(total_amount) as total_credit
@@ -95,24 +127,39 @@ left join (
 ) payments on payments.customer_id = c.id
 where c.deleted_at is null;
 
-create or replace function public.delete_customer_if_settled(p_customer_id uuid)
+drop function if exists public.delete_customer_if_settled(uuid);
+
+create function public.delete_customer_if_settled(p_customer_id uuid)
 returns void
 language plpgsql
-security invoker
+security definer
 set search_path = public
 as $$
 declare
+  owner_store_id uuid;
   customer_store_id uuid;
+  customer_code text;
+  customer_name text;
   customer_balance numeric;
 begin
+  owner_store_id := public.current_owner_store_id();
+
+  if owner_store_id is null then
+    raise exception 'Not authorized to delete this customer.' using errcode = '42501';
+  end if;
+
   select c.store_id
+       , c.customer_code
+       , c.name
     into customer_store_id
+       , customer_code
+       , customer_name
   from public.customers c
   where c.id = p_customer_id
     and c.deleted_at is null
   for update;
 
-  if customer_store_id is null or customer_store_id <> public.current_owner_store_id() then
+  if customer_store_id is null or customer_store_id <> owner_store_id then
     raise exception 'Customer not found.' using errcode = '42501';
   end if;
 
@@ -124,10 +171,22 @@ begin
     raise exception 'Cannot delete customer. Please settle the outstanding balance first.' using errcode = '23514';
   end if;
 
+  insert into public.customer_deletion_events (
+    store_id,
+    customer_code,
+    customer_name,
+    deleted_by
+  ) values (
+    customer_store_id,
+    customer_code,
+    customer_name,
+    auth.uid()
+  );
+
   update public.customers
   set deleted_at = now(), updated_at = now()
   where id = p_customer_id
-    and store_id = public.current_owner_store_id();
+    and store_id = owner_store_id;
 end;
 $$;
 

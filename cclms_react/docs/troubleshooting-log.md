@@ -158,3 +158,22 @@ The grants and policies above were provided as SQL instructions but were not run
 
 ## Validation Results
 The frontend production build passed. The live payment RPC, grants, and RLS policies were not verified against Supabase.
+
+# Barcode Scanner Returns an Incorrect Product Code
+
+## Problem
+The product barcode scanner sometimes populated the product ID field with a number that did not match the printed barcode. The scanner accepted the first successful decode from a single camera frame, which could allow a transient false read to be used.
+
+## Fix
+Require the same non-empty barcode value to decode successfully across three frames before accepting it. Update the scanner prompt to ask the user to hold the barcode steady until confirmation. The scanner still supports the configured retail barcode formats.
+
+## Files Edited
+- `src/components/Modules/StoreOwner/ProductBarcodeScanner.jsx`
+
+## Commands Used
+```powershell
+npm run build
+```
+
+## Validation Results
+The production build passed. The change was not tested against the user's physical barcode, so scanner accuracy on that specific product remains unverified.

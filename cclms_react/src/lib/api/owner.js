@@ -415,19 +415,13 @@ export const ownerApi = {
   // -------------------------------------------------------
 
   async deleteCustomer(id) {
-    const { data, error } = await supabase.rpc("delete_customer_if_settled", {
+    const { error } = await supabase.rpc("delete_customer_if_settled", {
       p_customer_id: id,
     });
 
     if (error) {
       throw error;
     }
-
-    if (!data?.success) {
-      throw new Error(data?.message || "Customer deletion failed.");
-    }
-
-    return data;
   },
 
   // =======================================================
@@ -583,10 +577,11 @@ export const ownerApi = {
   // =======================================================
 
   async listTransactions() {
-    const { data, error } = await supabase
-      .from("credit_entries")
-      .select(
-        `
+    const [creditsResult, deletionsResult] = await Promise.all([
+      supabase
+        .from("credit_entries")
+        .select(
+          `
         *,
         customer:customers (
           name,
@@ -601,23 +596,46 @@ export const ownerApi = {
           subtotal
         )
       `,
-      )
-      .order("created_at", {
-        ascending: false,
-      });
+        )
+        .order("created_at", { ascending: false }),
+      supabase
+        .from("customer_deletion_events")
+        .select("id, customer_code, customer_name, created_at")
+        .order("created_at", { ascending: false }),
+    ]);
 
-    if (error) {
-      throw error;
+    if (creditsResult.error) {
+      throw creditsResult.error;
     }
 
-    return (data ?? []).map((entry) => ({
+    if (deletionsResult.error) {
+      throw deletionsResult.error;
+    }
+
+    const creditTransactions = (creditsResult.data ?? []).map((entry) => ({
       id: entry.id,
       customerId: entry.customer_id,
       customerName: entry.customer?.name ?? entry.customer_id,
+      eventType: "Credit",
       products: (entry.credit_entry_items ?? [])
         .map((item) => item.product_name)
         .join(", "),
       createdAt: entry.created_at,
     }));
+
+    const deletionEvents = (deletionsResult.data ?? []).map((event) => ({
+      id: event.id,
+      customerId: null,
+      customerName: event.customer_name,
+      eventType: "Customer deleted",
+      products: `Customer ID: ${event.customer_code}`,
+      createdAt: event.created_at,
+    }));
+
+    return [...creditTransactions, ...deletionEvents].sort(
+      (first, second) =>
+        new Date(second.createdAt).getTime() -
+        new Date(first.createdAt).getTime(),
+    );
   },
 };

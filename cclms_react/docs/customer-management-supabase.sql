@@ -46,10 +46,10 @@ select
   c.phone_number,
   c.address,
   c.status,
-  c.created_at,
-  c.updated_at,
   coalesce(credits.total_credit, 0)::numeric(12,2) -
-    coalesce(payments.total_paid, 0)::numeric(12,2) as balance
+    coalesce(payments.total_paid, 0)::numeric(12,2) as balance,
+  c.created_at,
+  c.updated_at
 from public.customers c
 left join (
   select customer_id, sum(total_amount) as total_credit
