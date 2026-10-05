@@ -10,6 +10,7 @@ import {
   Pencil,
   Trash2,
   Eye,
+  EyeOff,
   Loader2,
 } from "lucide-react";
 
@@ -131,6 +132,8 @@ export default function OwnerManagement() {
   const [selectedOwner, setSelectedOwner] = useState(null);
 
   const [ownerToDelete, setOwnerToDelete] = useState(null);
+
+  const [showPassword, setShowPassword] = useState(false);
 
   const [form, setForm] = useState({
     full_name: "",
@@ -961,16 +964,35 @@ export default function OwnerManagement() {
             {!editingOwner && (
               <div className="grid gap-2">
                 <Label htmlFor="password">Password</Label>
-                <Input
-                  id="password"
-                  type="password"
-                  value={form.password}
-                  onChange={(event) =>
-                    handleChange("password", event.target.value)
-                  }
-                  placeholder="Enter password"
-                  className="h-10 border-stone-200 focus-visible:ring-[#8B4E2F]/30 dark:border-border dark:bg-background"
-                />
+
+                <div className="relative">
+                  <Input
+                    id="password"
+                    type={showPassword ? "text" : "password"}
+                    value={form.password}
+                    onChange={(event) =>
+                      handleChange("password", event.target.value)
+                    }
+                    placeholder="Enter password"
+                    className="h-10 border-stone-200 pr-10 focus-visible:ring-[#8B4E2F]/30 dark:border-border dark:bg-background"
+                  />
+
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword((prev) => !prev)}
+                    className="absolute right-0 top-0 flex h-10 w-10 items-center justify-center text-muted-foreground hover:text-foreground"
+                    aria-label={
+                      showPassword ? "Hide password" : "Show password"
+                    }
+                  >
+                    {showPassword ? (
+                      <EyeOff className="h-4 w-4" />
+                    ) : (
+                      <Eye className="h-4 w-4" />
+                    )}
+                  </button>
+                </div>
+
                 <p className="text-xs text-muted-foreground">
                   Minimum 6 characters.
                 </p>
