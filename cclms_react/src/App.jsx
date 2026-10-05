@@ -23,6 +23,7 @@ import CreditTab from "./components/Modules/StoreOwner/CreditTab";
 import ProductManagement from "./components/Modules/StoreOwner/ProductManagement";
 import TransactionHistory from "./components/Modules/StoreOwner/TransactionHistory";
 import CustomerManagement from "./components/Modules/StoreOwner/CustomerManagement";
+import OwnerManual from "./components/Modules/StoreOwner/OwnerManual";
 import ForgotPasswordPage from "./components/Modules/ForgotPassword/ForgotPassword";
 import ResetPassword from "./components/Modules/ForgotPassword/ResetPassword";
 
@@ -408,6 +409,7 @@ export default function App() {
                 <Route path="products" element={<ProductManagement />} />
                 <Route path="transactions" element={<TransactionHistory />} />
                 <Route path="customers" element={<CustomerManagement />} />
+                <Route path="manual" element={<OwnerManual />} />
               </Route>
 
               {/* ================================

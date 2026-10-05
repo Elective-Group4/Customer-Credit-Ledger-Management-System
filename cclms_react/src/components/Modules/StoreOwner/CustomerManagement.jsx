@@ -245,7 +245,7 @@ export default function CustomerManagement() {
         <Badge
           className={
             row.status === "active"
-              ? "bg-green-400/70"
+              ? "bg-green-500 text-white"
               : "bg-muted text-muted-foreground"
           }
           variant={row.status === "active" ? "default" : "secondary"}
@@ -279,17 +279,16 @@ export default function CustomerManagement() {
             className="text-red-500 hover:text-red-600"
             variant="ghost"
             size="icon"
-            title={`Delete ${row.name}`}
-            onClick={() => {
-              setCustomerToDelete(row);
-              setDeleteOpen(true);
-            }}
             disabled={Number(row.balance) !== 0}
             title={
               Number(row.balance) !== 0
                 ? "Settle this customer's balance before deleting."
                 : `Delete ${row.name}`
             }
+            onClick={() => {
+              setCustomerToDelete(row);
+              setDeleteOpen(true);
+            }}
           >
             <Trash2 />
           </Button>

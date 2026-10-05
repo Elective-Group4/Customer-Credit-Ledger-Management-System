@@ -5,6 +5,7 @@ import {
   ReceiptText,
   Users,
   Store,
+  BookOpenText,
 } from "lucide-react";
 import { OwnerNavMain } from "@/components/owner-nav-main";
 import { OwnerNavUser } from "@/components/owner-nav-user";
@@ -27,6 +28,7 @@ const navItems = [
     url: "/owner/transactions",
     icon: ReceiptText,
   },
+  { title: "Owner Manual", url: "/owner/manual", icon: BookOpenText },
 ];
 
 const teams = [{ name: "SARI-SARI", logo: Store, plan: "Store Owner" }];
