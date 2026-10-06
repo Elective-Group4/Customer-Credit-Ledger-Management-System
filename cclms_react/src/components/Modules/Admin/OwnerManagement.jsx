@@ -568,7 +568,7 @@ export default function OwnerManagement() {
       });
 
       toast.error("Failed to delete store owner", {
-        description: error?.message || "The owner could not be deleted.",
+        description: "The owner had active customer/products.",
       });
     } finally {
       setSaving(false);
